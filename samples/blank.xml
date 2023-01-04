@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<microprocessor name="mc_blank" description="No description set." width="2" length="2">
+	<nodes/>
+	<group>
+		<data>
+			<inputs/>
+			<outputs/>
+		</data>
+		<components/>
+		<components_bridge/>
+		<groups/>
+		<component_states/>
+		<component_bridge_states/>
+		<group_states/>
+	</group>
+</microprocessor>
+

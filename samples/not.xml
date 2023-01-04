@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<microprocessor name="not" description="No description set." width="2" length="1" id_counter="5" id_counter_node="2">
+	<nodes>
+		<n id="1" component_id="2">
+			<node label="Input" mode="1" description="The input signal to be processed."/>
+		</n>
+		<n id="2" component_id="4">
+			<node label="Output" description="The input signal to be processed.">
+				<position x="1"/>
+			</node>
+		</n>
+	</nodes>
+	<group>
+		<data>
+			<inputs/>
+			<outputs/>
+		</data>
+		<components>
+			<c>
+				<object id="5">
+					<pos x="-1"/>
+					<in1 component_id="2"/>
+					<out1/>
+				</object>
+			</c>
+		</components>
+		<components_bridge>
+			<c>
+				<object id="2">
+					<pos x="-2.5"/>
+					<in1/>
+					<out1/>
+				</object>
+			</c>
+			<c type="1">
+				<object id="4">
+					<pos x="0.5"/>
+					<in1 component_id="5"/>
+					<out1/>
+				</object>
+			</c>
+		</components_bridge>
+		<groups/>
+		<component_states>
+			<c0 id="5">
+				<pos x="-1"/>
+				<in1 component_id="2"/>
+				<out1/>
+			</c0>
+		</component_states>
+		<component_bridge_states>
+			<c0 id="2">
+				<pos x="-2.5"/>
+				<in1/>
+				<out1/>
+			</c0>
+			<c1 id="4">
+				<pos x="0.5"/>
+				<in1 component_id="5"/>
+				<out1/>
+			</c1>
+		</component_bridge_states>
+		<group_states/>
+	</group>
+</microprocessor>
+

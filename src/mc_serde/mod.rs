@@ -1,3 +1,5 @@
+//! Module containing ser/de code for microcontrollers
+
 use crate::Microcontroller;
 
 use self::microcontroller::{ComponentsBridgeInnerObject, Group, MicrocontrollerSerDe};
@@ -7,6 +9,8 @@ pub mod microcontroller;
 pub(crate) fn is_default<T: Default + PartialEq>(t: &T) -> bool {
     *t == Default::default()
 }
+
+// conversion stuff for MicrocontrollerSerDe <-> Microcontroller:
 
 impl From<Microcontroller> for MicrocontrollerSerDe {
     fn from(mc: Microcontroller) -> Self {

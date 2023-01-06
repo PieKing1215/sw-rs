@@ -1,5 +1,8 @@
+//! A WIP library for working with Stormworks microcontrollers.
+
 #![forbid(unsafe_code)]
 #![warn(clippy::pedantic)]
+#![warn(missing_docs)]
 
 pub mod components;
 pub mod mc_serde;
@@ -10,22 +13,45 @@ use components::Component;
 use mc_serde::microcontroller::{ComponentsBridgeInner, MicrocontrollerSerDe, Nodes};
 use serde::{Deserialize, Serialize};
 
+/// High level representation of a microcontroller.
+///
+/// Can be (de)serialized from XML using [`Microcontroller::from_xml_string()`] and [`Microcontroller::to_xml_string()`].
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(from = "MicrocontrollerSerDe", into = "MicrocontrollerSerDe")]
 pub struct Microcontroller {
+    /// The name of the microcontroller
     pub name: String,
+    /// The description of the microcontroller
+    ///
+    /// Default is `"No description set."`
     pub description: String,
+    /// The width of the microcontroller
+    ///
+    /// Can be `1..=6` Default is `2`
     pub width: u8,
+    /// The width of the microcontroller
+    ///
+    /// Can be `1..=6` Default is `2`
     pub length: u8,
+
     id_counter: u32,
     id_counter_node: Option<u32>,
+
+    /// 16x16 binary microcontroller icon.
     pub icon: [u16; 16],
 
     data_type: Option<String>,
 
+    /// Definition of IO nodes
+    ///
+    /// Subject to change
     pub nodes: Nodes, // TODO: make non-serde type
 
+    /// The main components (IO nodes are in [`components_bridge`][`Self::components_bridge`])
     pub components: Vec<Component>,
+    /// The IO node components
+    ///
+    /// Subject to change
     pub components_bridge: Vec<ComponentsBridgeInner>, // TODO: make non-serde type
 }
 
@@ -48,6 +74,7 @@ impl Microcontroller {
         quick_xml::de::from_str(xml)
     }
 
+    /// Creates a new blank Microcontroller with the given name, description, and size.
     #[must_use]
     pub fn new(name: String, description: String, width: u8, length: u8) -> Self {
         Self {

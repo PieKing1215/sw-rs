@@ -1,9 +1,11 @@
+//! Most of the ser/de code
+
 use std::collections::BTreeMap;
 
 use fakemap::FakeMap;
 use serde::{Deserialize, Serialize};
 
-use crate::components::Component;
+use crate::{components::Component, util::serde_utils::RecursiveStringMap};
 
 use super::is_default;
 
@@ -99,20 +101,26 @@ pub struct IONodeInner {
     pub position: Option<PositionXZ>,
 }
 
+/// A 2D f32 position that (de)serializes to/from "x" and "y".
 #[derive(Serialize, Deserialize, Default, PartialEq, Clone, Debug)]
 #[serde(rename = "node")]
 pub struct PositionXY {
+    /// X position.
     #[serde(rename = "@x", default, skip_serializing_if = "is_default")]
     pub x: f32,
+    /// Y position.
     #[serde(rename = "@y", default, skip_serializing_if = "is_default")]
     pub y: f32,
 }
 
+/// A 2D f32 position that (de)serializes to/from "x" and "z".
 #[derive(Serialize, Deserialize, Default, PartialEq, Clone, Debug)]
 #[serde(rename = "node")]
 pub struct PositionXZ {
+    /// X position.
     #[serde(rename = "@x", default, skip_serializing_if = "is_default")]
     pub x: f32,
+    /// Z position.
     #[serde(rename = "@z", default, skip_serializing_if = "is_default")]
     pub z: f32,
 }
@@ -183,36 +191,13 @@ pub struct ComponentsBridgeInner {
     pub object: ComponentsBridgeInnerObject,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(untagged)]
-pub enum RecursiveStringMap {
-    String(String),
-    Map(FakeMap<String, RecursiveStringMap>),
-}
-
-impl Default for RecursiveStringMap {
-    fn default() -> Self {
-        Self::Map(FakeMap::new())
-    }
-}
-
-impl RecursiveStringMap {
-    #[must_use]
-    pub fn into_map(self) -> Option<FakeMap<String, RecursiveStringMap>> {
-        match self {
-            RecursiveStringMap::Map(m) => Some(m),
-            RecursiveStringMap::String(_) => None,
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct ComponentsBridgeInnerObject {
     #[serde(rename = "@id", default, skip_serializing_if = "is_default")]
     pub id: u32,
 
     #[serde(flatten)]
-    pub other: FakeMap<String, RecursiveStringMap>,
+    pub(crate) other: FakeMap<String, RecursiveStringMap>,
 }
 
 /// Serializes Vec into tags with names c0, c1, c2, etc.

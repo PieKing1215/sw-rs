@@ -1,17 +1,22 @@
-use std::marker::PhantomData;
+//! Module containing things related to microcontroller components (nodes)
 
-use crate::mc_serde::microcontroller::PositionXY;
-use crate::mc_serde::microcontroller::RecursiveStringMap;
+use std::marker::PhantomData;
+use std::num::ParseFloatError;
+
 use crate::types::CompileType;
 use crate::util::fakemap_hack::FakeMapExt;
+use crate::{mc_serde::microcontroller::PositionXY, util::serde_utils::RecursiveStringMap};
 use fakemap::FakeMap;
 use paste::paste;
 use serde::{Deserialize, Serialize};
 
 use crate::{mc_serde::is_default, types::Type};
 
+/// List of IO types for a component.
 pub struct ComponentIODef {
+    /// List of input Types.
     pub inputs: Vec<Type>,
+    /// List of output Types.
     pub outputs: Vec<Type>,
 }
 
@@ -20,13 +25,16 @@ fn skip_connection<T: CompileType>(v: &ConnectionV) -> bool {
         && (T::get_type() == Type::Number || T::get_type() == Type::OnOff)
 }
 
+/// Represents a connection to another component.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ComponentConnection {
+    /// The id of the component to connect to.
     #[serde(
         rename = "@component_id",
         deserialize_with = "deserialize_string_to_u32"
     )]
     pub component_id: u32,
+    /// The index on the other component to connect to.
     #[serde(
         rename = "@node_index",
         deserialize_with = "deserialize_string_to_u8",
@@ -106,11 +114,14 @@ impl core::fmt::Debug for ConnectionV {
     }
 }
 
+/// Represents an input connection slot.
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct TypedInputConnection<T: CompileType> {
+    /// The actual connection.
     #[serde(flatten)]
     pub connection: Option<ComponentConnection>,
 
+    // some extra ser/de fields
     #[serde(rename = "@v", default, skip_serializing_if = "is_default")]
     v_attr: Option<String>,
     #[serde(default, skip_serializing_if = "skip_connection::<T>")]
@@ -128,6 +139,7 @@ impl<T: CompileType> core::fmt::Debug for TypedInputConnection<T> {
 }
 
 impl<T: CompileType> TypedInputConnection<T> {
+    /// Creates a [`TypedInputConnection`] with the given connection.
     #[must_use]
     pub fn new(component_id: u32, node_index: u8) -> Self {
         Self {
@@ -138,6 +150,7 @@ impl<T: CompileType> TypedInputConnection<T> {
         }
     }
 
+    /// Creates an unconnected [`TypedInputConnection`].
     #[must_use]
     pub fn empty() -> Self {
         Self {
@@ -149,6 +162,7 @@ impl<T: CompileType> TypedInputConnection<T> {
     }
 }
 
+/// Represents an output connection slot.
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct TypedOutputConnection<T: CompileType> {
     #[serde(rename = "@v", default, skip_serializing_if = "is_default")]
@@ -467,7 +481,7 @@ macro_rules! components {
         ),*
     ) => {
         paste! {
-
+            #[allow(missing_docs)]
             #[derive(Serialize, Deserialize, Clone, Debug)]
             #[serde(rename = "object", tag = "@type", content = "object")]
             pub enum Component {
@@ -492,6 +506,7 @@ macro_rules! components {
             }
 
             impl Component {
+                /// Generates a [`ComponentIODef`] for this [`Component`].
                 #[must_use]
                 pub fn io_def(&self) -> ComponentIODef {
                     match self {
@@ -504,6 +519,7 @@ macro_rules! components {
                     }
                 }
 
+                /// Returns an immutable list of the input connections for this [`Component`].
                 #[must_use]
                 pub fn inputs(&self) -> Vec<&Option<ComponentConnection>> {
                     match self {
@@ -516,6 +532,7 @@ macro_rules! components {
                     }
                 }
 
+                /// Returns a mutable list of the input connections for this [`Component`].
                 #[must_use]
                 pub fn inputs_mut(&mut self) -> Vec<&mut Option<ComponentConnection>> {
                     match self {
@@ -528,6 +545,7 @@ macro_rules! components {
                     }
                 }
 
+                /// Returns the id of this [`Component`].
                 #[must_use]
                 pub fn id(&self) -> u32 {
                     match self {
@@ -537,6 +555,7 @@ macro_rules! components {
                     }
                 }
 
+                /// Immutably borrows the position of this [`Component`].
                 #[must_use]
                 pub fn position(&self) -> &PositionXY {
                     match self {
@@ -546,6 +565,7 @@ macro_rules! components {
                     }
                 }
 
+                /// Mutably borrows the position of this [`Component`].
                 #[must_use]
                 pub fn position_mut(&mut self) -> &mut PositionXY {
                     match self {
@@ -556,7 +576,7 @@ macro_rules! components {
                 }
 
                 #[must_use]
-                pub fn ser_to_map(&self) -> FakeMap<String, RecursiveStringMap> {
+                pub(crate) fn ser_to_map(&self) -> FakeMap<String, RecursiveStringMap> {
                     let mut se = quick_xml::se::Serializer::new(String::new());
                     se.escape(quick_xml::se::QuoteLevel::Partial);
                     let ser = self.serialize(se).unwrap();
@@ -628,21 +648,45 @@ macro_rules! components {
     };
 }
 
+/// Represents a [`String`] and the [`f64`] value it parses to
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct TextValue {
     #[serde(rename = "@text")]
-    pub text: String,
+    text: String,
     #[serde(rename = "@value", default, skip_serializing_if = "is_default")]
-    pub value: f64,
+    value: f64,
 }
 
+impl TextValue {
+    /// Creates a [`TextValue`] from the given text.
+    ///
+    /// # Errors
+    /// Will return an [`Err`] if the text fails to parse into a [`f64`].
+    pub fn from_text(text: impl Into<String>) -> Result<Self, ParseFloatError> {
+        let text: String = text.into();
+        Ok(Self { value: text.parse()?, text })
+    }
+
+    /// Creates a [`TextValue`] from the given value.
+    pub fn from_value(val: impl Into<f64>) -> Self {
+        let val = val.into();
+        Self { text: val.to_string(), value: val }
+    }
+}
+
+/// Struct representing a dropdown item with a label and value.
+///
+/// Used in [`Component::PropertyDropdown`].
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename = "i")]
 pub struct DropdownItem {
+    /// The label for this item.
     #[serde(rename = "@l")]
-    label: String,
+    pub label: String,
 
-    v: TextValue,
+    /// The value for this item.
+    #[serde(rename = "v")]
+    pub value: TextValue,
 }
 
 mod dropdown_items {

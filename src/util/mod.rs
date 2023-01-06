@@ -1,6 +1,9 @@
+//! Module containing some utility functions/types
+
 use std::path::PathBuf;
 
 pub(crate) mod fakemap_hack;
+pub mod serde_utils;
 
 /// Finds the path of the user's microcontroller data folder.
 ///

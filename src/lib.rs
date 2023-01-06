@@ -33,12 +33,19 @@ impl Microcontroller {
     /// # Errors
     /// Returns an `Err(quick_xml::DeError)` if the serialization failed.<br>
     /// If this happens, I consider it a bug in the library, please report it.
-    pub fn to_microcontroller_xml(&self) -> Result<String, quick_xml::DeError> {
+    pub fn to_xml_string(&self) -> Result<String, quick_xml::DeError> {
         let mut se = quick_xml::se::Serializer::new(String::new());
         se.indent('\t', 1);
         se.escape(quick_xml::se::QuoteLevel::Partial);
         let header = r#"<?xml version="1.0" encoding="UTF-8"?>"#;
-        self.serialize(se).map(|s| format!("{header}\n{s}"))
+        self.serialize(se).map(|s| format!("{header}\n{s}\n\n"))
+    }
+
+    /// # Errors
+    /// Returns an `Err(quick_xml::DeError)` if the deserialization failed.<br>
+    /// If this happens, I consider it a bug in the library, please report it.
+    pub fn from_xml_str(xml: &str) -> Result<Self, quick_xml::DeError> {
+        quick_xml::de::from_str(xml)
     }
 
     #[must_use]

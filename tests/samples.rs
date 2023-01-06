@@ -11,14 +11,14 @@ fn test_samples_serde_matches() {
             println!("CHECKING {fname}...");
             let src = std::fs::read_to_string(entry.path()).unwrap();
 
-            let mc: Microcontroller = quick_xml::de::from_str(&src)
+            let mc: Microcontroller = Microcontroller::from_xml_str(&src)
                 .unwrap_or_else(|_| panic!("Failed to deserialize {fname}"));
 
             let out = mc
-                .to_microcontroller_xml()
+                .to_xml_string()
                 .unwrap_or_else(|_| panic!("Failed to serialize {fname}"));
 
-            assert_str_eq!(src.trim(), out.trim(), "{fname}:\n{mc:#?}");
+            assert_str_eq!(src, out, "{fname}:\n{mc:#?}");
         }
     }
 }
@@ -36,14 +36,14 @@ fn test_sw_dir_serde_matches() {
                 println!("CHECKING {fname}...");
                 let src = std::fs::read_to_string(entry.path()).unwrap();
 
-                let mc: Microcontroller = quick_xml::de::from_str(&src)
+                let mc: Microcontroller = Microcontroller::from_xml_str(&src)
                     .unwrap_or_else(|_| panic!("Failed to deserialize {fname}"));
 
                 let out = mc
-                    .to_microcontroller_xml()
+                    .to_xml_string()
                     .unwrap_or_else(|_| panic!("Failed to serialize {fname}"));
 
-                assert_str_eq!(src.trim(), out.trim(), "{fname}:\n{mc:#?}");
+                assert_str_eq!(src, out, "{fname}:\n{mc:#?}");
             }
         }
     }

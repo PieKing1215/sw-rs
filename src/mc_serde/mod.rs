@@ -35,7 +35,7 @@ impl From<Microcontroller> for MicrocontrollerSerDe {
             sym15: mc.icon[15],
             nodes: mc.nodes,
             group: Group {
-                data: microcontroller::Data { typ: mc._data_type, inputs: (), outputs: () },
+                data: microcontroller::Data { typ: mc.data_type, inputs: (), outputs: () },
                 groups: (),
                 component_states: mc
                     .components
@@ -43,7 +43,8 @@ impl From<Microcontroller> for MicrocontrollerSerDe {
                     .map(|c| ComponentsBridgeInnerObject {
                         id: c.id(),
                         other: {
-                            let mut m = c.ser_to_map().remove("object").unwrap().as_map().unwrap();
+                            let mut m =
+                                c.ser_to_map().remove("object").unwrap().into_map().unwrap();
                             m.remove("@id");
                             m
                         },
@@ -77,7 +78,7 @@ impl From<MicrocontrollerSerDe> for Microcontroller {
                 sd.sym0, sd.sym1, sd.sym2, sd.sym3, sd.sym4, sd.sym5, sd.sym6, sd.sym7, sd.sym8,
                 sd.sym9, sd.sym10, sd.sym11, sd.sym12, sd.sym13, sd.sym14, sd.sym15,
             ],
-            _data_type: sd.group.data.typ,
+            data_type: sd.group.data.typ,
 
             nodes: sd.nodes,
             components: sd.group.components.components,

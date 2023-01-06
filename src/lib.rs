@@ -1,3 +1,6 @@
+#![forbid(unsafe_code)]
+#![warn(clippy::pedantic)]
+
 pub mod components;
 pub mod mc_serde;
 pub mod types;
@@ -18,7 +21,7 @@ pub struct Microcontroller {
     id_counter_node: Option<u32>,
     pub icon: [u16; 16],
 
-    _data_type: Option<String>,
+    data_type: Option<String>,
 
     pub nodes: Nodes, // TODO: make non-serde type
 
@@ -27,11 +30,42 @@ pub struct Microcontroller {
 }
 
 impl Microcontroller {
+    /// # Errors
+    /// Returns an `Err(quick_xml::DeError)` if the serialization failed.<br>
+    /// If this happens, I consider it a bug in the library, please report it.
     pub fn to_microcontroller_xml(&self) -> Result<String, quick_xml::DeError> {
         let mut se = quick_xml::se::Serializer::new(String::new());
         se.indent('\t', 1);
         se.escape(quick_xml::se::QuoteLevel::Partial);
         let header = r#"<?xml version="1.0" encoding="UTF-8"?>"#;
         self.serialize(se).map(|s| format!("{header}\n{s}"))
+    }
+
+    #[must_use]
+    pub fn new(name: String, description: String, width: u8, length: u8) -> Self {
+        Self {
+            name,
+            description,
+            width,
+            length,
+            nodes: Nodes::default(),
+            id_counter: 0,
+            id_counter_node: None,
+            icon: [0; 16],
+            data_type: None,
+            components: Vec::new(),
+            components_bridge: Vec::new(),
+        }
+    }
+}
+
+impl Default for Microcontroller {
+    fn default() -> Self {
+        Self::new(
+            "New microcontroller".into(),
+            "No description set.".into(),
+            2,
+            2,
+        )
     }
 }

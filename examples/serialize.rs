@@ -3,12 +3,12 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use sw_mc::{
     components::{Component, TypedInputConnection},
-    mc_serde::microcontroller::{MicrocontrollerSerDe, PositionXY, RecursiveStringMap},
+    mc_serde::microcontroller::{PositionXY, RecursiveStringMap},
     Microcontroller,
 };
 
 fn main() {
-    let mc: Microcontroller = MicrocontrollerSerDe::default().into();
+    let mc: Microcontroller = Microcontroller::default();
     let mut se = quick_xml::se::Serializer::new(String::new());
     se.indent('\t', 1);
     se.escape(quick_xml::se::QuoteLevel::Partial);

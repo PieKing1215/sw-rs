@@ -36,7 +36,7 @@ pub struct ComponentConnection {
     pub node_index: u8,
 }
 
-pub fn deserialize_string_to_u32<'de, D>(de: D) -> Result<u32, D::Error>
+fn deserialize_string_to_u32<'de, D>(de: D) -> Result<u32, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -44,7 +44,7 @@ where
     Ok(s.parse().unwrap())
 }
 
-pub fn deserialize_string_to_u8<'de, D>(de: D) -> Result<u8, D::Error>
+fn deserialize_string_to_u8<'de, D>(de: D) -> Result<u8, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -128,6 +128,7 @@ impl<T: CompileType> core::fmt::Debug for TypedInputConnection<T> {
 }
 
 impl<T: CompileType> TypedInputConnection<T> {
+    #[must_use]
     pub fn new(component_id: u32, node_index: u8) -> Self {
         Self {
             connection: Some(ComponentConnection { component_id, node_index }),
@@ -137,6 +138,7 @@ impl<T: CompileType> TypedInputConnection<T> {
         }
     }
 
+    #[must_use]
     pub fn empty() -> Self {
         Self {
             connection: None,
@@ -190,7 +192,8 @@ impl From<_ComponentDe> for Component {
     }
 }
 
-pub fn component_deserialize<'de, D>(de: D) -> Result<Component, D::Error>
+#[allow(dead_code)]
+pub(crate) fn component_deserialize<'de, D>(de: D) -> Result<Component, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -214,14 +217,13 @@ where
             if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
                 for (k, _) in o.iter_mut() {
                     if *k == "inc" {
-                        *k = "in1".into()
+                        *k = "in1".into();
                     } else if *k == "inoff" {
-                        *k = "in34".into()
+                        *k = "in34".into();
                     } else if k.starts_with("in") {
-                        *k = format!(
-                            "in{}",
-                            k.trim_start_matches("in").parse::<u8>().unwrap() + 1
-                        )
+                        if let Ok(n) = k.trim_start_matches("in").parse::<u8>() {
+                            *k = format!("in{}", n + 1);
+                        }
                     }
                 }
                 cde.inner
@@ -233,7 +235,7 @@ where
     Ok(cde.into())
 }
 
-pub fn components_deserialize<'de, D>(de: D) -> Result<Vec<Component>, D::Error>
+pub(crate) fn components_deserialize<'de, D>(de: D) -> Result<Vec<Component>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -260,14 +262,13 @@ where
                     if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
                         for (k, _) in o.iter_mut() {
                             if *k == "inc" {
-                                *k = "in1".into()
+                                *k = "in1".into();
                             } else if *k == "inoff" {
-                                *k = "in34".into()
+                                *k = "in34".into();
                             } else if k.starts_with("in") {
-                                *k = format!(
-                                    "in{}",
-                                    k.trim_start_matches("in").parse::<u8>().unwrap() + 1
-                                )
+                                if let Ok(n) = k.trim_start_matches("in").parse::<u8>() {
+                                    *k = format!("in{}", n + 1);
+                                }
                             }
                         }
                         cde.inner
@@ -283,7 +284,11 @@ where
     Ok(cs)
 }
 
-pub fn component_serialize<S>(component: &Component, serializer: S) -> Result<S::Ok, S::Error>
+#[allow(dead_code)]
+pub(crate) fn component_serialize<S>(
+    component: &Component,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
@@ -318,14 +323,13 @@ where
         if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
             for (k, _) in o.iter_mut() {
                 if *k == "in1" {
-                    *k = "inc".into()
+                    *k = "inc".into();
                 } else if *k == "in34" {
-                    *k = "inoff".into()
+                    *k = "inoff".into();
                 } else if k.starts_with("in") {
-                    *k = format!(
-                        "in{}",
-                        k.trim_start_matches("in").parse::<u8>().unwrap() - 1
-                    )
+                    if let Ok(n) = k.trim_start_matches("in").parse::<u8>() {
+                        *k = format!("in{}", n - 1);
+                    }
                 }
             }
 
@@ -350,12 +354,12 @@ where
     | Component::CompositeReadOnOff { channel, .. } = component
     {
         if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
-            if *channel != -1 {
-                o.remove("in2");
-            } else {
+            if *channel == -1 {
                 // for some reason, in these nodes in2 is supposed to go after out1
                 let in2 = o.remove("in2").unwrap();
                 o.insert("in2".into(), in2);
+            } else {
+                o.remove("in2");
             }
 
             cde.inner
@@ -366,7 +370,7 @@ where
     cde.serialize(serializer)
 }
 
-pub fn components_serialize<S>(components: &[Component], ser: S) -> Result<S::Ok, S::Error>
+pub(crate) fn components_serialize<S>(components: &[Component], ser: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
@@ -405,14 +409,13 @@ where
                 if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
                     for (k, _) in o.iter_mut() {
                         if *k == "in1" {
-                            *k = "inc".into()
+                            *k = "inc".into();
                         } else if *k == "in34" {
-                            *k = "inoff".into()
+                            *k = "inoff".into();
                         } else if k.starts_with("in") {
-                            *k = format!(
-                                "in{}",
-                                k.trim_start_matches("in").parse::<u8>().unwrap() - 1
-                            )
+                            if let Ok(n) = k.trim_start_matches("in").parse::<u8>() {
+                                *k = format!("in{}", n - 1);
+                            }
                         }
                     }
 
@@ -437,12 +440,12 @@ where
             | Component::CompositeReadOnOff { channel, .. } = c
             {
                 if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
-                    if *channel != -1 {
-                        o.remove("in2");
-                    } else {
+                    if *channel == -1 {
                         // for some reason, in these nodes in2 is supposed to go after out1
                         let in2 = o.remove("in2").unwrap();
                         o.insert("in2".into(), in2);
+                    } else {
+                        o.remove("in2");
                     }
 
                     cde.inner
@@ -489,6 +492,7 @@ macro_rules! components {
             }
 
             impl Component {
+                #[must_use]
                 pub fn io_def(&self) -> ComponentIODef {
                     match self {
                         $(
@@ -500,6 +504,7 @@ macro_rules! components {
                     }
                 }
 
+                #[must_use]
                 pub fn inputs(&self) -> Vec<&Option<ComponentConnection>> {
                     match self {
                         $(
@@ -511,6 +516,7 @@ macro_rules! components {
                     }
                 }
 
+                #[must_use]
                 pub fn inputs_mut(&mut self) -> Vec<&mut Option<ComponentConnection>> {
                     match self {
                         $(
@@ -522,6 +528,7 @@ macro_rules! components {
                     }
                 }
 
+                #[must_use]
                 pub fn id(&self) -> u32 {
                     match self {
                         $(
@@ -530,6 +537,7 @@ macro_rules! components {
                     }
                 }
 
+                #[must_use]
                 pub fn position(&self) -> &PositionXY {
                     match self {
                         $(
@@ -538,6 +546,7 @@ macro_rules! components {
                     }
                 }
 
+                #[must_use]
                 pub fn position_mut(&mut self) -> &mut PositionXY {
                     match self {
                         $(
@@ -546,6 +555,7 @@ macro_rules! components {
                     }
                 }
 
+                #[must_use]
                 pub fn ser_to_map(&self) -> FakeMap<String, RecursiveStringMap> {
                     let mut se = quick_xml::se::Serializer::new(String::new());
                     se.escape(quick_xml::se::QuoteLevel::Partial);
@@ -570,11 +580,13 @@ macro_rules! components {
                         if let Some(RecursiveStringMap::Map(mut o)) = de.remove("object") {
                             for (k, _) in o.iter_mut() {
                                 if *k == "in1" {
-                                    *k = "inc".into()
+                                    *k = "inc".into();
                                 } else if *k == "in34" {
-                                    *k = "inoff".into()
+                                    *k = "inoff".into();
                                 } else if k.starts_with("in") {
-                                    *k = format!("in{}", k.trim_start_matches("in").parse::<u8>().unwrap() - 1)
+                                    if let Ok(n) = k.trim_start_matches("in").parse::<u8>() {
+                                        *k = format!("in{}", n - 1);
+                                    }
                                 }
                             }
 
@@ -664,8 +676,9 @@ fn one() -> f32 {
     1.0
 }
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
 fn is_one(v: &f32) -> bool {
-    *v == 1.0
+    (*v - 1.0).abs() < f32::EPSILON
 }
 
 macro_rules! str_def_fns {

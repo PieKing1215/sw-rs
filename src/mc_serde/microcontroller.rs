@@ -7,9 +7,10 @@ use crate::components::Component;
 
 use super::is_default;
 
+#[allow(clippy::module_name_repetitions)]
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename = "microprocessor")]
-pub struct MicrocontrollerSerDe {
+pub(crate) struct MicrocontrollerSerDe {
     #[serde(rename = "@name", default, skip_serializing_if = "is_default")]
     pub name: String,
     #[serde(rename = "@description", default, skip_serializing_if = "is_default")]
@@ -62,48 +63,6 @@ pub struct MicrocontrollerSerDe {
 
     pub nodes: Nodes,
     pub group: Group,
-}
-
-impl MicrocontrollerSerDe {
-    pub fn new(name: String, description: String, width: u8, length: u8) -> Self {
-        Self {
-            name,
-            description,
-            width,
-            length,
-            nodes: Default::default(),
-            group: Default::default(),
-            id_counter: 0,
-            id_counter_node: None,
-            sym0: 0,
-            sym1: 0,
-            sym2: 0,
-            sym3: 0,
-            sym4: 0,
-            sym5: 0,
-            sym6: 0,
-            sym7: 0,
-            sym8: 0,
-            sym9: 0,
-            sym10: 0,
-            sym11: 0,
-            sym12: 0,
-            sym13: 0,
-            sym14: 0,
-            sym15: 0,
-        }
-    }
-}
-
-impl Default for MicrocontrollerSerDe {
-    fn default() -> Self {
-        Self::new(
-            "New microcontroller".into(),
-            "No description set.".into(),
-            2,
-            2,
-        )
-    }
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
@@ -238,10 +197,11 @@ impl Default for RecursiveStringMap {
 }
 
 impl RecursiveStringMap {
-    pub fn as_map(self) -> Option<FakeMap<String, RecursiveStringMap>> {
+    #[must_use]
+    pub fn into_map(self) -> Option<FakeMap<String, RecursiveStringMap>> {
         match self {
             RecursiveStringMap::Map(m) => Some(m),
-            _ => None,
+            RecursiveStringMap::String(_) => None,
         }
     }
 }

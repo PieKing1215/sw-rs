@@ -3,8 +3,6 @@ pub mod mc_serde;
 pub mod types;
 pub mod util;
 
-use std::{cell::RefCell, sync::Arc};
-
 use components::Component;
 use mc_serde::microcontroller::{ComponentsBridgeInner, MicrocontrollerSerDe, Nodes};
 use serde::{Deserialize, Serialize};
@@ -26,9 +24,6 @@ pub struct Microcontroller {
 
     pub components: Vec<Component>,
     pub components_bridge: Vec<ComponentsBridgeInner>, // TODO: make non-serde type
-
-    // TODO: actual implementation
-    real: Arc<RefCell<Option<MicrocontrollerSerDe>>>,
 }
 
 impl Microcontroller {

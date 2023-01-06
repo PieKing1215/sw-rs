@@ -21,7 +21,7 @@ fn main() {
         id: 1,
         pos: PositionXY { x: 1.0, y: 2.0 },
         composite: TypedInputConnection::new(2, 0),
-        variable_channel: TypedInputConnection::empty(),        
+        variable_channel: TypedInputConnection::empty(),
         channel: 0,
         out: Default::default(),
     };

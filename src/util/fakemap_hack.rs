@@ -1,6 +1,5 @@
 use fakemap::FakeMap;
 
-
 pub trait FakeMapExt<K> {
     fn duplicate_by_key(&mut self, k: K, reserved: K);
 }

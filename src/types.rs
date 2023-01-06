@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Type {
@@ -57,4 +57,3 @@ impl CompileType for TAudio {
         Type::Audio
     }
 }
-

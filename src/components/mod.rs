@@ -1,9 +1,9 @@
 use std::marker::PhantomData;
 
-use crate::types::CompileType;
-use crate::util::fakemap_hack::FakeMapExt;
 use crate::mc_serde::microcontroller::PositionXY;
 use crate::mc_serde::microcontroller::RecursiveStringMap;
+use crate::types::CompileType;
+use crate::util::fakemap_hack::FakeMapExt;
 use fakemap::FakeMap;
 use paste::paste;
 use serde::{Deserialize, Serialize};
@@ -16,28 +16,37 @@ pub struct ComponentIODef {
 }
 
 fn skip_connection<T: CompileType>(v: &ConnectionV) -> bool {
-    (*v == ConnectionV::default()) && (T::get_type() == Type::Number || T::get_type() == Type::OnOff)
+    (*v == ConnectionV::default())
+        && (T::get_type() == Type::Number || T::get_type() == Type::OnOff)
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ComponentConnection {
-    #[serde(rename = "@component_id", deserialize_with = "deserialize_string_to_u32")]
+    #[serde(
+        rename = "@component_id",
+        deserialize_with = "deserialize_string_to_u32"
+    )]
     pub component_id: u32,
-    #[serde(rename = "@node_index", deserialize_with = "deserialize_string_to_u8", default, skip_serializing_if = "is_default")]
+    #[serde(
+        rename = "@node_index",
+        deserialize_with = "deserialize_string_to_u8",
+        default,
+        skip_serializing_if = "is_default"
+    )]
     pub node_index: u8,
 }
 
 pub fn deserialize_string_to_u32<'de, D>(de: D) -> Result<u32, D::Error>
-    where
-        D: serde::Deserializer<'de>,
+where
+    D: serde::Deserializer<'de>,
 {
     let s = String::deserialize(de)?;
     Ok(s.parse().unwrap())
 }
 
 pub fn deserialize_string_to_u8<'de, D>(de: D) -> Result<u8, D::Error>
-    where
-        D: serde::Deserializer<'de>,
+where
+    D: serde::Deserializer<'de>,
 {
     let s = String::deserialize(de)?;
     Ok(s.parse().unwrap())
@@ -91,7 +100,9 @@ pub struct ConnectionV {
 
 impl core::fmt::Debug for ConnectionV {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ConnectionV").field("bools", &self.bools).finish()
+        f.debug_struct("ConnectionV")
+            .field("bools", &self.bools)
+            .finish()
     }
 }
 
@@ -110,16 +121,16 @@ pub struct TypedInputConnection<T: CompileType> {
 
 impl<T: CompileType> core::fmt::Debug for TypedInputConnection<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TypedInputConnection").field("connection", &self.connection).finish()
+        f.debug_struct("TypedInputConnection")
+            .field("connection", &self.connection)
+            .finish()
     }
 }
 
 impl<T: CompileType> TypedInputConnection<T> {
     pub fn new(component_id: u32, node_index: u8) -> Self {
         Self {
-            connection: Some (
-                ComponentConnection { component_id, node_index }
-            ),
+            connection: Some(ComponentConnection { component_id, node_index }),
             _v: None,
             v: ConnectionV::default(),
             _phantom: PhantomData,
@@ -172,7 +183,8 @@ impl From<_ComponentDe> for Component {
         let ser = W { object: de }.serialize(se).unwrap();
         let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
-        let de: Component = quick_xml::de::from_str(&ser).expect(&format!("Deserializing component:\n{db}\n{ser}\n"));
+        let de: Component = quick_xml::de::from_str(&ser)
+            .expect(&format!("Deserializing component:\n{db}\n{ser}\n"));
 
         de
     }
@@ -185,7 +197,8 @@ where
     let mut cde = _ComponentDe::deserialize(de)?;
 
     if cde.inner.get("@type").is_none() {
-        cde.inner.insert("@type".into(), RecursiveStringMap::String("0".into()));
+        cde.inner
+            .insert("@type".into(), RecursiveStringMap::String("0".into()));
     }
     if let Some(RecursiveStringMap::String(s)) = cde.inner.get("@type") {
         // see note on NumericalJunction
@@ -194,7 +207,8 @@ where
             if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
                 o.remove("out1");
                 o.insert("out2".into(), RecursiveStringMap::default());
-                cde.inner.insert("object".into(), RecursiveStringMap::Map(o));
+                cde.inner
+                    .insert("object".into(), RecursiveStringMap::Map(o));
             }
         } else if s == "40" || s == "41" {
             if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
@@ -204,10 +218,14 @@ where
                     } else if *k == "inoff" {
                         *k = "in34".into()
                     } else if k.starts_with("in") {
-                        *k = format!("in{}", k.trim_start_matches("in").parse::<u8>().unwrap() + 1)
+                        *k = format!(
+                            "in{}",
+                            k.trim_start_matches("in").parse::<u8>().unwrap() + 1
+                        )
                     }
                 }
-                cde.inner.insert("object".into(), RecursiveStringMap::Map(o));
+                cde.inner
+                    .insert("object".into(), RecursiveStringMap::Map(o));
             }
         }
     }
@@ -221,37 +239,46 @@ where
 {
     let de = Vec::<_ComponentDe>::deserialize(de)?;
     // println!("{de:?}");
-    let cs = de.into_iter().map(|mut cde| {
-        if cde.inner.get("@type").is_none() {
-            cde.inner.insert("@type".into(), RecursiveStringMap::String("0".into()));
-        }
-        if let Some(RecursiveStringMap::String(s)) = cde.inner.get("@type") {
-            // see note on NumericalJunction
-            if s == "21" {
-                // FakeMap has no get_mut
-                if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
-                    o.remove("out1");
-                    o.insert("out2".into(), RecursiveStringMap::default());
-                    cde.inner.insert("object".into(), RecursiveStringMap::Map(o));
-                }
-            } else if s == "40" || s == "41" {
-                if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
-                    for (k, _) in o.iter_mut() {
-                        if *k == "inc" {
-                            *k = "in1".into()
-                        } else if *k == "inoff" {
-                            *k = "in34".into()
-                        } else if k.starts_with("in") {
-                            *k = format!("in{}", k.trim_start_matches("in").parse::<u8>().unwrap() + 1)
-                        }
+    let cs = de
+        .into_iter()
+        .map(|mut cde| {
+            if cde.inner.get("@type").is_none() {
+                cde.inner
+                    .insert("@type".into(), RecursiveStringMap::String("0".into()));
+            }
+            if let Some(RecursiveStringMap::String(s)) = cde.inner.get("@type") {
+                // see note on NumericalJunction
+                if s == "21" {
+                    // FakeMap has no get_mut
+                    if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
+                        o.remove("out1");
+                        o.insert("out2".into(), RecursiveStringMap::default());
+                        cde.inner
+                            .insert("object".into(), RecursiveStringMap::Map(o));
                     }
-                    cde.inner.insert("object".into(), RecursiveStringMap::Map(o));
+                } else if s == "40" || s == "41" {
+                    if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
+                        for (k, _) in o.iter_mut() {
+                            if *k == "inc" {
+                                *k = "in1".into()
+                            } else if *k == "inoff" {
+                                *k = "in34".into()
+                            } else if k.starts_with("in") {
+                                *k = format!(
+                                    "in{}",
+                                    k.trim_start_matches("in").parse::<u8>().unwrap() + 1
+                                )
+                            }
+                        }
+                        cde.inner
+                            .insert("object".into(), RecursiveStringMap::Map(o));
+                    }
                 }
             }
-        }
 
-        cde.into()
-    }).collect();
+            cde.into()
+        })
+        .collect();
 
     Ok(cs)
 }
@@ -278,13 +305,16 @@ where
         if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
             o.remove("out2");
             o.duplicate_by_key("out1".into(), "__reserved".into());
-            cde.inner.insert("object".into(), RecursiveStringMap::Map(o));
+            cde.inner
+                .insert("object".into(), RecursiveStringMap::Map(o));
         }
     }
-    
+
     // map in1,in2,in3,etc. to inc,in1,in2,etc.
     // see note on CompositeWriteNum/CompositeWriteOnOff
-    if let Component::CompositeWriteNum { count, offset, .. } | Component::CompositeWriteOnOff { count, offset, .. } = component {
+    if let Component::CompositeWriteNum { count, offset, .. }
+    | Component::CompositeWriteOnOff { count, offset, .. } = component
+    {
         if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
             for (k, _) in o.iter_mut() {
                 if *k == "in1" {
@@ -292,7 +322,10 @@ where
                 } else if *k == "in34" {
                     *k = "inoff".into()
                 } else if k.starts_with("in") {
-                    *k = format!("in{}", k.trim_start_matches("in").parse::<u8>().unwrap() - 1)
+                    *k = format!(
+                        "in{}",
+                        k.trim_start_matches("in").parse::<u8>().unwrap() - 1
+                    )
                 }
             }
 
@@ -307,12 +340,15 @@ where
                 }
             }
 
-            cde.inner.insert("object".into(), RecursiveStringMap::Map(o));
+            cde.inner
+                .insert("object".into(), RecursiveStringMap::Map(o));
         }
     }
 
     // remove in2 if channel is constant
-    if let Component::CompositeReadNum { channel, .. } | Component::CompositeReadOnOff { channel, .. } = component {
+    if let Component::CompositeReadNum { channel, .. }
+    | Component::CompositeReadOnOff { channel, .. } = component
+    {
         if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
             if *channel != -1 {
                 o.remove("in2");
@@ -322,10 +358,11 @@ where
                 o.insert("in2".into(), in2);
             }
 
-            cde.inner.insert("object".into(), RecursiveStringMap::Map(o));
+            cde.inner
+                .insert("object".into(), RecursiveStringMap::Map(o));
         }
     }
-    
+
     cde.serialize(serializer)
 }
 
@@ -333,80 +370,91 @@ pub fn components_serialize<S>(components: &Vec<Component>, ser: S) -> Result<S:
 where
     S: serde::Serializer,
 {
-    let cdes = components.iter().map(|c| {
-        let mut se = quick_xml::se::Serializer::new(String::new());
-        se.escape(quick_xml::se::QuoteLevel::Partial);
-        let ser = c.serialize(se).unwrap();
-        let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
+    let cdes = components
+        .iter()
+        .map(|c| {
+            let mut se = quick_xml::se::Serializer::new(String::new());
+            se.escape(quick_xml::se::QuoteLevel::Partial);
+            let ser = c.serialize(se).unwrap();
+            let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
-        let mut cde: _ComponentDe = quick_xml::de::from_str(&ser).unwrap();
-        if let Some(RecursiveStringMap::String(s)) = cde.inner.get("@type").cloned() {
-            if s == "0" {
-                cde.inner.remove("@type");
+            let mut cde: _ComponentDe = quick_xml::de::from_str(&ser).unwrap();
+            if let Some(RecursiveStringMap::String(s)) = cde.inner.get("@type").cloned() {
+                if s == "0" {
+                    cde.inner.remove("@type");
+                }
             }
-        }
 
-        // rename out2 to out1
-        // see note on NumericalJunction
-        if matches!(c, Component::NumericalJunction { .. }) {
-            // FakeMap has no get_mut
-            if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
-                o.remove("out2");
-                o.duplicate_by_key("out1".into(), "__reserved".into());
-                cde.inner.insert("object".into(), RecursiveStringMap::Map(o));
+            // rename out2 to out1
+            // see note on NumericalJunction
+            if matches!(c, Component::NumericalJunction { .. }) {
+                // FakeMap has no get_mut
+                if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
+                    o.remove("out2");
+                    o.duplicate_by_key("out1".into(), "__reserved".into());
+                    cde.inner
+                        .insert("object".into(), RecursiveStringMap::Map(o));
+                }
             }
-        }
-    
-        // map in1,in2,in3,etc. to inc,in1,in2,etc.
-        // see note on CompositeWriteNum/CompositeWriteOnOff
-        if let Component::CompositeWriteNum { count, offset, .. } | Component::CompositeWriteOnOff { count, offset, .. } = c {
-            if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
-                for (k, _) in o.iter_mut() {
-                    if *k == "in1" {
-                        *k = "inc".into()
-                    } else if *k == "in34" {
-                        *k = "inoff".into()
-                    } else if k.starts_with("in") {
-                        *k = format!("in{}", k.trim_start_matches("in").parse::<u8>().unwrap() - 1)
+
+            // map in1,in2,in3,etc. to inc,in1,in2,etc.
+            // see note on CompositeWriteNum/CompositeWriteOnOff
+            if let Component::CompositeWriteNum { count, offset, .. }
+            | Component::CompositeWriteOnOff { count, offset, .. } = c
+            {
+                if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
+                    for (k, _) in o.iter_mut() {
+                        if *k == "in1" {
+                            *k = "inc".into()
+                        } else if *k == "in34" {
+                            *k = "inoff".into()
+                        } else if k.starts_with("in") {
+                            *k = format!(
+                                "in{}",
+                                k.trim_start_matches("in").parse::<u8>().unwrap() - 1
+                            )
+                        }
                     }
-                }
-    
-                if *offset != -1 {
-                    o.remove("inoff");
-                }
-    
-                for i in 1..=32 {
-                    if i > *count {
-                        let l = format!("in{}", i);
-                        o.remove(&l);
+
+                    if *offset != -1 {
+                        o.remove("inoff");
                     }
+
+                    for i in 1..=32 {
+                        if i > *count {
+                            let l = format!("in{}", i);
+                            o.remove(&l);
+                        }
+                    }
+
+                    cde.inner
+                        .insert("object".into(), RecursiveStringMap::Map(o));
                 }
-    
-                cde.inner.insert("object".into(), RecursiveStringMap::Map(o));
             }
-        }
 
-        // remove in2 if channel is constant
-        if let Component::CompositeReadNum { channel, .. } | Component::CompositeReadOnOff { channel, .. } = c {
-            if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
-                if *channel != -1 {
-                    o.remove("in2");
-                } else {
-                    // for some reason, in these nodes in2 is supposed to go after out1
-                    let in2 = o.remove("in2").unwrap();
-                    o.insert("in2".into(), in2);
+            // remove in2 if channel is constant
+            if let Component::CompositeReadNum { channel, .. }
+            | Component::CompositeReadOnOff { channel, .. } = c
+            {
+                if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
+                    if *channel != -1 {
+                        o.remove("in2");
+                    } else {
+                        // for some reason, in these nodes in2 is supposed to go after out1
+                        let in2 = o.remove("in2").unwrap();
+                        o.insert("in2".into(), in2);
+                    }
+
+                    cde.inner
+                        .insert("object".into(), RecursiveStringMap::Map(o));
                 }
-    
-                cde.inner.insert("object".into(), RecursiveStringMap::Map(o));
             }
-        }
 
-        cde
-    }).collect::<Vec<_>>();
+            cde
+        })
+        .collect::<Vec<_>>();
 
-    ser.collect_seq(
-        cdes.iter()
-    )
+    ser.collect_seq(cdes.iter())
 }
 
 macro_rules! components {
@@ -514,7 +562,7 @@ macro_rules! components {
                             de.insert("object".into(), RecursiveStringMap::Map(o));
                         }
                     }
-                    
+
 
                     // map in1,in2,in3,etc. to inc,in1,in2,etc.
                     // see note on CompositeWriteNum/CompositeWriteOnOff
@@ -555,7 +603,7 @@ macro_rules! components {
                                 let in2 = o.remove("in2").unwrap();
                                 o.insert("in2".into(), in2);
                             }
-                
+
                             de.insert("object".into(), RecursiveStringMap::Map(o));
                         }
                     }
@@ -586,7 +634,7 @@ pub struct DropdownItem {
 }
 
 mod dropdown_items {
-    use serde::{Serialize, Deserialize};
+    use serde::{Deserialize, Serialize};
 
     use super::DropdownItem;
 
@@ -608,9 +656,7 @@ mod dropdown_items {
     where
         S: serde::Serializer,
     {
-        DropdownItems {
-            items: items.clone(),
-        }.serialize(ser)
+        DropdownItems { items: items.clone() }.serialize(ser)
     }
 }
 
@@ -629,7 +675,7 @@ macro_rules! str_def_fns {
             fn [<str_ $val>]() -> String {
                 $val .into()
             }
-            
+
             #[allow(non_snake_case)]
             fn [<is_str_ $val>](s: &String) -> bool {
                 s == $val
@@ -642,7 +688,7 @@ macro_rules! str_def_fns {
             fn [<str_ $id>]() -> String {
                 $val .into()
             }
-            
+
             #[allow(non_snake_case)]
             fn [<is_str_ $id>](s: &String) -> bool {
                 s == $val
@@ -656,20 +702,21 @@ str_def_fns!("toggle");
 str_def_fns!("on");
 str_def_fns!("off");
 str_def_fns!("number");
-str_def_fns!("Label");
 
 mod serde_script {
-    use serde::{Serialize, Deserialize};
+    use serde::{Deserialize, Serialize};
 
     pub fn deserialize<'de, D>(de: D) -> Result<Option<String>, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
         let r = Option::<String>::deserialize(de);
-        r.map(|o| o.map(|s| {
-            // println!("{s}");
-            s
-        }))
+        r.map(|o| {
+            o.map(|s| {
+                // println!("{s}");
+                s
+            })
+        })
     }
 
     pub fn serialize<S>(s: &Option<String>, ser: S) -> Result<S::Ok, S::Error>
@@ -736,7 +783,7 @@ components! {
     20 = PropertyDropdown[][out(1): Number]{
         #[serde(rename = "@name", default = "str_value", skip_serializing_if = "is_str_value")]
         name: String,
-        
+
         #[serde(with = "dropdown_items")]
         items: Vec<DropdownItem>,
     },
@@ -831,7 +878,7 @@ components! {
     37 = UpDownCounter[up(1): OnOff, down(2): OnOff, reset(3): OnOff][out(1): Number]{
         #[serde(rename = "@m", default, skip_serializing_if = "is_default")]
         mode: u8, // 1 for clamp, 0 for disabled
-        
+
         #[serde(rename = "@is", default, skip_serializing_if = "is_default")]
         is: Option<String>, // ??
 

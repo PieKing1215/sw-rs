@@ -1,16 +1,6 @@
-use std::{
-    cell::RefCell,
-    collections::{BTreeMap, HashMap},
-    sync::Arc,
-};
+use crate::Microcontroller;
 
-use fakemap::FakeMap;
-
-use crate::{Microcontroller, components::Component};
-
-use self::microcontroller::{
-    ComponentsBridgeInner, ComponentsBridgeInnerObject, Group, MicrocontrollerSerDe, RecursiveStringMap,
-};
+use self::microcontroller::{ComponentsBridgeInnerObject, Group, MicrocontrollerSerDe};
 
 pub mod microcontroller;
 
@@ -20,7 +10,6 @@ pub fn is_default<T: Default + PartialEq>(t: &T) -> bool {
 
 impl From<Microcontroller> for MicrocontrollerSerDe {
     fn from(mc: Microcontroller) -> Self {
-        let real = mc.real.take().unwrap();
         MicrocontrollerSerDe {
             name: mc.name,
             description: mc.description,
@@ -51,11 +40,14 @@ impl From<Microcontroller> for MicrocontrollerSerDe {
                 component_states: mc
                     .components
                     .iter()
-                    .map(|c| ComponentsBridgeInnerObject { id: c.id(), other: {
-                        let mut m = c.ser_to_map().remove("object").unwrap().as_map().unwrap();
-                        m.remove("@id");
-                        m
-                    } })
+                    .map(|c| ComponentsBridgeInnerObject {
+                        id: c.id(),
+                        other: {
+                            let mut m = c.ser_to_map().remove("object").unwrap().as_map().unwrap();
+                            m.remove("@id");
+                            m
+                        },
+                    })
                     .collect(),
                 component_bridge_states: mc
                     .components_bridge
@@ -75,37 +67,21 @@ impl From<Microcontroller> for MicrocontrollerSerDe {
 impl From<MicrocontrollerSerDe> for Microcontroller {
     fn from(sd: MicrocontrollerSerDe) -> Self {
         Self {
-            name: sd.name.clone(),
-            description: sd.description.clone(),
+            name: sd.name,
+            description: sd.description,
             width: sd.width,
             length: sd.length,
             id_counter: sd.id_counter,
             id_counter_node: sd.id_counter_node,
             icon: [
-                sd.sym0,
-                sd.sym1,
-                sd.sym2,
-                sd.sym3,
-                sd.sym4,
-                sd.sym5,
-                sd.sym6,
-                sd.sym7,
-                sd.sym8,
-                sd.sym9,
-                sd.sym10,
-                sd.sym11,
-                sd.sym12,
-                sd.sym13,
-                sd.sym14,
-                sd.sym15,
+                sd.sym0, sd.sym1, sd.sym2, sd.sym3, sd.sym4, sd.sym5, sd.sym6, sd.sym7, sd.sym8,
+                sd.sym9, sd.sym10, sd.sym11, sd.sym12, sd.sym13, sd.sym14, sd.sym15,
             ],
-            _data_type: sd.group.data.typ.clone(),
+            _data_type: sd.group.data.typ,
 
-            nodes: sd.nodes.clone(),
-            components: sd.group.components.components.clone(),
-            components_bridge: sd.group.components_bridge.components_bridge.clone(),
-
-            real: Arc::new(RefCell::new(Some(sd))),
+            nodes: sd.nodes,
+            components: sd.group.components.components,
+            components_bridge: sd.group.components_bridge.components_bridge,
         }
     }
 }

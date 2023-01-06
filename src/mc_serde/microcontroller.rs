@@ -26,38 +26,38 @@ pub struct MicrocontrollerSerDe {
         skip_serializing_if = "Option::is_none"
     )]
     pub id_counter_node: Option<u32>,
-    
-    #[serde(rename = "@sym0", default, skip_serializing_if="is_default")]
+
+    #[serde(rename = "@sym0", default, skip_serializing_if = "is_default")]
     pub sym0: u16,
-    #[serde(rename = "@sym1", default, skip_serializing_if="is_default")]
+    #[serde(rename = "@sym1", default, skip_serializing_if = "is_default")]
     pub sym1: u16,
-    #[serde(rename = "@sym2", default, skip_serializing_if="is_default")]
+    #[serde(rename = "@sym2", default, skip_serializing_if = "is_default")]
     pub sym2: u16,
-    #[serde(rename = "@sym3", default, skip_serializing_if="is_default")]
+    #[serde(rename = "@sym3", default, skip_serializing_if = "is_default")]
     pub sym3: u16,
-    #[serde(rename = "@sym4", default, skip_serializing_if="is_default")]
+    #[serde(rename = "@sym4", default, skip_serializing_if = "is_default")]
     pub sym4: u16,
-    #[serde(rename = "@sym5", default, skip_serializing_if="is_default")]
+    #[serde(rename = "@sym5", default, skip_serializing_if = "is_default")]
     pub sym5: u16,
-    #[serde(rename = "@sym6", default, skip_serializing_if="is_default")]
+    #[serde(rename = "@sym6", default, skip_serializing_if = "is_default")]
     pub sym6: u16,
-    #[serde(rename = "@sym7", default, skip_serializing_if="is_default")]
+    #[serde(rename = "@sym7", default, skip_serializing_if = "is_default")]
     pub sym7: u16,
-    #[serde(rename = "@sym8", default, skip_serializing_if="is_default")]
+    #[serde(rename = "@sym8", default, skip_serializing_if = "is_default")]
     pub sym8: u16,
-    #[serde(rename = "@sym9", default, skip_serializing_if="is_default")]
+    #[serde(rename = "@sym9", default, skip_serializing_if = "is_default")]
     pub sym9: u16,
-    #[serde(rename = "@sym10", default, skip_serializing_if="is_default")]
+    #[serde(rename = "@sym10", default, skip_serializing_if = "is_default")]
     pub sym10: u16,
-    #[serde(rename = "@sym11", default, skip_serializing_if="is_default")]
+    #[serde(rename = "@sym11", default, skip_serializing_if = "is_default")]
     pub sym11: u16,
-    #[serde(rename = "@sym12", default, skip_serializing_if="is_default")]
+    #[serde(rename = "@sym12", default, skip_serializing_if = "is_default")]
     pub sym12: u16,
-    #[serde(rename = "@sym13", default, skip_serializing_if="is_default")]
+    #[serde(rename = "@sym13", default, skip_serializing_if = "is_default")]
     pub sym13: u16,
-    #[serde(rename = "@sym14", default, skip_serializing_if="is_default")]
+    #[serde(rename = "@sym14", default, skip_serializing_if = "is_default")]
     pub sym14: u16,
-    #[serde(rename = "@sym15", default, skip_serializing_if="is_default")]
+    #[serde(rename = "@sym15", default, skip_serializing_if = "is_default")]
     pub sym15: u16,
 
     pub nodes: Nodes,
@@ -66,7 +66,7 @@ pub struct MicrocontrollerSerDe {
 
 impl MicrocontrollerSerDe {
     pub fn new(name: String, description: String, width: u8, length: u8) -> Self {
-        let mut s = Self {
+        let s = Self {
             name,
             description,
             width,
@@ -202,7 +202,12 @@ pub struct Data {
 #[derive(Serialize, Deserialize, Default, Debug)]
 #[serde(rename = "components")]
 pub struct Components {
-    #[serde(rename = "c", default, deserialize_with = "crate::components::components_deserialize", serialize_with = "crate::components::components_serialize")]
+    #[serde(
+        rename = "c",
+        default,
+        deserialize_with = "crate::components::components_deserialize",
+        serialize_with = "crate::components::components_serialize"
+    )]
     pub components: Vec<Component>,
 }
 
@@ -250,54 +255,6 @@ pub struct ComponentsBridgeInnerObject {
 
     #[serde(flatten)]
     pub other: FakeMap<String, RecursiveStringMap>,
-}
-
-/// Serializes Vec into tags with names in1, in2, in3, etc.
-fn ser_bridge_in<S, T: Serialize>(states: &Vec<T>, ser: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    ser.collect_map(
-        states
-            .iter()
-            .enumerate()
-            .map(|(i, v)| (format!("in{}", i + 1), v)),
-    )
-}
-
-/// Serializes Vec into tags with names out1, out2, out3, etc.
-fn ser_bridge_out<S, T: Serialize>(states: &Vec<T>, ser: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    ser.collect_map(
-        states
-            .iter()
-            .enumerate()
-            .map(|(i, v)| (format!("out{}", i + 1), v)),
-    )
-}
-
-fn de_bridge_in<'de, D, T: Deserialize<'de>>(de: D) -> Result<Vec<T>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    BTreeMap::<String, T>::deserialize(de).map(|m| {
-        m.into_iter()
-            .filter_map(|(k, v)| if k.starts_with("in") { Some(v) } else { None })
-            .collect()
-    })
-}
-
-fn de_bridge_out<'de, D, T: Deserialize<'de>>(de: D) -> Result<Vec<T>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    BTreeMap::<String, T>::deserialize(de).map(|m| {
-        m.into_iter()
-            .filter_map(|(k, v)| if k.starts_with("out") { Some(v) } else { None })
-            .collect()
-    })
 }
 
 #[derive(Serialize, Deserialize, Default, Debug)]

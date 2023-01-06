@@ -12,7 +12,7 @@ fn test_samples_serde_matches() {
 
             let mc: Microcontroller =
                 quick_xml::de::from_str(&src).expect(&format!("Failed to deserialize {fname}"));
-            
+
             let out = mc
                 .to_microcontroller_xml()
                 .expect(&format!("Failed to serialize {fname}"));

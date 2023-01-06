@@ -183,8 +183,8 @@ impl From<_ComponentDe> for Component {
         let ser = W { object: de }.serialize(se).unwrap();
         let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
-        let de: Component = quick_xml::de::from_str(&ser)
-            .expect(&format!("Deserializing component:\n{db}\n{ser}\n"));
+        let de: Component = quick_xml::de::from_str(ser)
+            .unwrap_or_else(|_| panic!("Deserializing component:\n{db}\n{ser}\n"));
 
         de
     }
@@ -292,7 +292,7 @@ where
     let ser = component.serialize(se).unwrap();
     let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
-    let mut cde: _ComponentDe = quick_xml::de::from_str(&ser).unwrap();
+    let mut cde: _ComponentDe = quick_xml::de::from_str(ser).unwrap();
     if let Some(RecursiveStringMap::String(s)) = cde.inner.get("@type").cloned() {
         if s == "0" {
             cde.inner.remove("@type");
@@ -366,7 +366,7 @@ where
     cde.serialize(serializer)
 }
 
-pub fn components_serialize<S>(components: &Vec<Component>, ser: S) -> Result<S::Ok, S::Error>
+pub fn components_serialize<S>(components: &[Component], ser: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
@@ -378,7 +378,7 @@ where
             let ser = c.serialize(se).unwrap();
             let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
-            let mut cde: _ComponentDe = quick_xml::de::from_str(&ser).unwrap();
+            let mut cde: _ComponentDe = quick_xml::de::from_str(ser).unwrap();
             if let Some(RecursiveStringMap::String(s)) = cde.inner.get("@type").cloned() {
                 if s == "0" {
                     cde.inner.remove("@type");
@@ -652,11 +652,11 @@ mod dropdown_items {
         Ok(di.items)
     }
 
-    pub fn serialize<S>(items: &Vec<DropdownItem>, ser: S) -> Result<S::Ok, S::Error>
+    pub fn serialize<S>(items: &[DropdownItem], ser: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        DropdownItems { items: items.clone() }.serialize(ser)
+        DropdownItems { items: items.to_vec() }.serialize(ser)
     }
 }
 
@@ -702,30 +702,6 @@ str_def_fns!("toggle");
 str_def_fns!("on");
 str_def_fns!("off");
 str_def_fns!("number");
-
-mod serde_script {
-    use serde::{Deserialize, Serialize};
-
-    pub fn deserialize<'de, D>(de: D) -> Result<Option<String>, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let r = Option::<String>::deserialize(de);
-        r.map(|o| {
-            o.map(|s| {
-                // println!("{s}");
-                s
-            })
-        })
-    }
-
-    pub fn serialize<S>(s: &Option<String>, ser: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        s.serialize(ser)
-    }
-}
 
 components! {
     0 = NOT[input(1): OnOff][out(1): OnOff]{},
@@ -987,7 +963,7 @@ components! {
     54 = NumToCompositeBin[input(1): Number][out(1): Composite]{},
     55 = CompositeBinToNum[input(1): Composite][out(1): Number]{},
     56 = Lua[data_in(1): Composite, video_in(2): Video][data_out(1): Composite, video_out(2): Video]{
-        #[serde(rename = "@script", default, skip_serializing_if="is_default", with = "serde_script")]
+        #[serde(rename = "@script", default, skip_serializing_if="is_default")]
         script: Option<String>,
     },
     57 = VideoSwitchbox[on(1): Video, off(2): Video, switch(3): OnOff][out(1): Video]{},

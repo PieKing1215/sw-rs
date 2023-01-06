@@ -66,7 +66,7 @@ pub struct MicrocontrollerSerDe {
 
 impl MicrocontrollerSerDe {
     pub fn new(name: String, description: String, width: u8, length: u8) -> Self {
-        let s = Self {
+        Self {
             name,
             description,
             width,
@@ -91,9 +91,7 @@ impl MicrocontrollerSerDe {
             sym13: 0,
             sym14: 0,
             sym15: 0,
-        };
-
-        return s;
+        }
     }
 }
 
@@ -160,11 +158,11 @@ pub struct PositionXZ {
     pub z: f32,
 }
 
-impl Into<RecursiveStringMap> for PositionXY {
-    fn into(self) -> RecursiveStringMap {
+impl From<PositionXY> for RecursiveStringMap {
+    fn from(val: PositionXY) -> Self {
         let mut m = FakeMap::new();
-        m.insert("@x".into(), RecursiveStringMap::String(self.x.to_string()));
-        m.insert("@y".into(), RecursiveStringMap::String(self.y.to_string()));
+        m.insert("@x".into(), RecursiveStringMap::String(val.x.to_string()));
+        m.insert("@y".into(), RecursiveStringMap::String(val.y.to_string()));
         RecursiveStringMap::Map(m)
     }
 }
@@ -279,7 +277,7 @@ where
 }
 
 /// Serializes Vec into tags with names c0, c1, c2, etc.
-fn ser_component_states<S, T: Serialize>(states: &Vec<T>, ser: S) -> Result<S::Ok, S::Error>
+fn ser_component_states<S, T: Serialize>(states: &[T], ser: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {

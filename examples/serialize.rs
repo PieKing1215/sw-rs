@@ -74,7 +74,7 @@ fn main() {
     </c0>
 </R2>"#;
 
-    let r2 = quick_xml::de::from_str::<R2>(&des).unwrap();
+    let r2 = quick_xml::de::from_str::<R2>(des).unwrap();
 
     println!("{:?}", r2);
 }

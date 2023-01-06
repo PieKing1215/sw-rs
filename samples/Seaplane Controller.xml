@@ -1,0 +1,1105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<microprocessor name="Seaplane Controller" description="No description set." width="5" length="6" id_counter="77" id_counter_node="15" sym1="2016" sym2="384" sym3="8184" sym4="4104" sym5="4104" sym6="4104" sym7="4104" sym8="8184" sym10="2056" sym11="16382" sym12="8194" sym13="8186" sym14="6" sym15="2">
+	<nodes>
+		<n id="1" component_id="5">
+			<node label="HUD Out" type="6" description="The input signal to be processed.">
+				<position x="1"/>
+			</node>
+		</n>
+		<n id="2" component_id="8">
+			<node label="Throttle" mode="1" type="1" description="The input signal to be processed."/>
+		</n>
+		<n id="3" component_id="9">
+			<node label="Speed" mode="1" type="1" description="The input signal to be processed.">
+				<position z="1"/>
+			</node>
+		</n>
+		<n id="4" component_id="15">
+			<node label="Compass" mode="1" type="1" description="The input signal to be processed.">
+				<position x="1" z="1"/>
+			</node>
+		</n>
+		<n id="5" component_id="16">
+			<node label="Tilt Forward" mode="1" type="1" description="The input signal to be processed.">
+				<position x="2" z="2"/>
+			</node>
+		</n>
+		<n id="6" component_id="17">
+			<node label="Tilt Up" mode="1" type="1" description="The input signal to be processed.">
+				<position x="2" z="1"/>
+			</node>
+		</n>
+		<n id="7" component_id="18">
+			<node label="Tilt Right" mode="1" type="1" description="The input signal to be processed.">
+				<position x="2"/>
+			</node>
+		</n>
+		<n id="8" component_id="21">
+			<node label="x" mode="1" type="1" description="The input signal to be processed.">
+				<position z="3"/>
+			</node>
+		</n>
+		<n id="9" component_id="22">
+			<node label="y" mode="1" type="1" description="The input signal to be processed.">
+				<position x="1" z="3"/>
+			</node>
+		</n>
+		<n id="10" component_id="24">
+			<node label="Alt" mode="1" type="1" description="The input signal to be processed.">
+				<position x="2" z="3"/>
+			</node>
+		</n>
+		<n id="11" component_id="26">
+			<node label="Seat In" mode="1" type="5" description="The input signal to be processed.">
+				<position z="2"/>
+			</node>
+		</n>
+		<n id="12" component_id="37">
+			<node label="Pitch" type="1" description="The input signal to be processed.">
+				<position x="4" z="2"/>
+			</node>
+		</n>
+		<n id="13" component_id="38">
+			<node label="Yaw" type="1" description="The input signal to be processed.">
+				<position x="4" z="1"/>
+			</node>
+		</n>
+		<n id="14" component_id="39">
+			<node label="Roll" type="1" description="The input signal to be processed.">
+				<position x="4"/>
+			</node>
+		</n>
+		<n id="15" component_id="73">
+			<node label="Throttle out" type="1" description="The input signal to be processed.">
+				<position x="4" z="3"/>
+			</node>
+		</n>
+	</nodes>
+	<group>
+		<data>
+			<inputs/>
+			<outputs/>
+		</data>
+		<components>
+			<c type="56">
+				<object id="4" script='
+I=127
+L=255
+q=tonumber
+af=screen
+aK=string
+t=math
+ak=t.floor
+aJ=aK.format
+aO=af.drawText
+Y=af.setColor
+O=property.getText
+aB=aK.gmatch
+aI=af.drawLine
+w=t.cos
+n=t.sin
+ac=t.pi
+aR={}aR.aU=function()x,p=48,48
+bi=-.025
+b_=47
+aZ=p
+az=.35
+ay=.36
+aY=0
+be=-7/4
+bb=1
+aF=3
+W=2500
+bg=1
+A=ac*2
+aw=function(_,aL,D)return _&lt;aL and aL or _&gt;D and D or _ end
+ae=function(ap,aQ)local i={}for c=1,#aQ do
+i[c]={}for T=1,#ap[1]do
+i[c][T]=0
+for X=1,#ap do
+i[c][T]=i[c][T]+ap[X][T]*aQ[c][X]end
+end
+end
+return i
+end
+aV=function(P)local aC,o={},1
+for c=1,#P do
+local _,a,b=P[c][1],P[c][2],P[c][3]local aj,an,ah,s=g[1][1]*_+g[2][1]*a+g[3][1]*b+g[4][1],g[1][2]*_+g[2][2]*a+g[3][2]*b+g[4][2],g[1][3]*_+g[2][3]*a+g[3][3]*b+g[4][3],g[1][4]*_+g[2][4]*a+g[3][4]*b+g[4][4]if(-s&lt;=aj and aj&lt;=s)and(-s&lt;=an and an&lt;=s)and(0&lt;=ah and ah&lt;=s)then
+aC[o]={aj/s*x+b_,an/s*p+aZ,ah/s,c}o=o+1
+end
+end
+return aC
+end
+function u(_,a,b)return{_=_ or 0;a=a or 0;b=b or 0;
+au=function(k,h)return u(k._+h._,k.a+h.a,k.b+h.b)end;
+aA=function(k,h)return u(k._-h._,k.a-h.a,k.b-h.b)end;
+aD=function(k,h)return u(k._*h,k.a*h,k.b*h)end}end
+e=u()aE=u()ax=u()local ad={aS=function(...)e._,e.a,e.b,b,aW,ba,aT,bc,aX,bj=...
+aG=false
+m=u(ba*A,t.atan(n(bc*A),n(aT*A)),aW*A)e,aE=e:au(e:aA(aE):aD(aF)),e
+m,ax=m:au(m:aA(ax):aD(aF)),m
+Z=aw(aX,-.277,.277)*.408*A
+aH=aw(bj,-1/8,1/8)*.9*A+.404+t.abs(Z/.7101)*.122
+av=w(Z)*.1523
+ab=n(Z)*.1523
+aM=w(aH)*av+(aG and .132 or .161)ai=n(aH)*av-(aG and .141 or .023)end,bh=function()o=bi+5/8-aM
+i=az-ab
+D=-az-ab
+al=ay-ai
+h=-ay-ai
+bd={{2*o/(i-D)*bg,0,0,0},{-(i+D)/(i-D),-(h+al)/(h-al),W/(W-o),1},{0,2*o/(h-al),0,0},{0,0,-W*o/(W-o),0}}local E,J,F,x,p,H=n(m._),n(m.a),n(m.b),w(m._),w(m.a),w(m.b)G={{H*p-F*E*J,F*p+H*E*J,-x*J,0},{-F*x,H*x,E,0},{H*J+F*E*p,F*J-H*E*p,x*p,0},{0,0,0,1}}aa=ae(G,{{aY+ab,be+aM,bb+ai,1}})[1]aP={}for c=1,4 do
+aP[c]={G[1][c],G[2][c],G[3][c],G[4][c]}end
+g=ae(bd,ae(aP,{{1,0,0,0},{0,1,0,0},{0,0,1,0},{-(e._+aa[1]),-(e.a+aa[2]),-(e.b+aa[3]),1}}))end,bf=function(y,z,C,V,N,R)K=aV({{y,z,C},{V,N,R}})if#K==2 then
+aI(K[1][1],K[1][2],K[2][1],K[2][2])end
+end}function ad.B(v,y,z,C,V,N,R)for c=1,v do
+ad.bf(y+(V-y)*(c-1)/v,z+(N-z)*(c-1)/v,C+(R-C)*(c-1)/v,y+(V-y)*c/v,z+(N-z)*c/v,C+(R-C)*c/v)end
+end
+return ad
+end
+local r=aR.aU();
+local e={}am=.5
+aN=90
+function ag(...)local i={}for c,d in ipairs({...})do i[c]=input.getNumber(d)or 0 end
+return table.unpack(i)end
+function onTick()if not at then
+at={}for aq,_,a in aB(O("kl"),O("p1"))do
+at[aq]={_=q(_),a=q(a)}end
+end
+if not ar then
+ar={}for aq,_,a,b,U,l,as in aB(O("rd1"),O("p2"))do
+ar[aq]={_=q(_),a=q(a),b=q(b),U=q(U),l=q(l),as=q(as)}end
+end
+am,aN=ag(11,12)e._,e.a,e.b=ag(13,14,15)r.aS(ag(13,14,15,15,16,17,18,19,9,10))end
+function onDraw()Y(0,L,0,200)aI(85,86,85-(w(ac*am)*10),86-(n(ac*am)*10.0))aO(76,90,aJ("%.1f",aN))aO(0,10,aJ("%.0f / %.0f / %.0f",e._,e.a,e.b))r.bh()Y(63,I,L,100)local j=250
+local M=t.min(4,ak(e.b/25))if M&gt;0 then
+for _=-M,M do
+for a=-M,M do
+local Q=ak(e._/j)*j+_*j
+local S=ak(e.a/j)*j+a*j
+r.B(4,Q,S+j/2,0,Q+j,S+j/2,0)r.B(4,Q+j/2,S,0,Q+j/2,S+j,0)end
+end
+end
+for X,d in pairs(ar)do
+local ao=at[X]if ao then
+local _,a,f,sin,cos=d._+ao._,d.a+ao.a,d.as/2,n(d.U),w(d.U)Y(L,I,I,80)r.B(16,_+sin*f,a+-cos*f,d.b,_+-sin*f,a+cos*f,d.b)r.B(16,_+cos*d.l+sin*f,a+sin*d.l+-cos*f,d.b,_+cos*d.l+-sin*f,a+sin*d.l+cos*f,d.b)Y(L,L,I,I)r.B(16,_+sin*f,a+-cos*f,d.b,_+cos*d.l+sin*f,a+sin*d.l+-cos*f,d.b)r.B(16,_+cos*d.l+-sin*f,a+sin*d.l+cos*f,d.b,_+-sin*f,a+cos*f,d.b)end
+end
+end
+'>
+					<pos x="2.5" y="3.25"/>
+					<in1 component_id="30">
+						<v 01="0.02" 02="-0.004999" 04="0.010002" 12="-0.029541" 13="-19170.947266" 14="-4708.56543" 15="9.353177" 16="-0.354951" 17="0.013686" 18="0.236314" 19="0.000004"/>
+					</in1>
+					<in2>
+						<v/>
+					</in2>
+					<out1>
+						<v/>
+					</out1>
+					<out2>
+						<v/>
+					</out2>
+				</object>
+			</c>
+			<c type="40">
+				<object id="30" count="9" offset="10">
+					<pos x="1.25" y="1.25"/>
+					<inc component_id="26">
+						<v 01="0.02" 02="-0.004999" 04="0.010001"/>
+					</inc>
+					<in1 component_id="74"/>
+					<in2 component_id="9" v="-0.029685"/>
+					<in3 component_id="21" v="-19170.947266"/>
+					<in4 component_id="22" v="-4708.56543"/>
+					<in5 component_id="24" v="9.353327"/>
+					<in6 component_id="15" v="-0.354948"/>
+					<in7 component_id="16" v="0.013689"/>
+					<in8 component_id="17" v="0.236311"/>
+					<in9 component_id="18" v="0.000004"/>
+					<out1>
+						<v 01="0.02" 02="-0.004999" 04="0.010001" 12="-0.029685" 13="-19170.947266" 14="-4708.56543" 15="9.353327" 16="-0.354948" 17="0.013689" 18="0.236311" 19="0.000004"/>
+					</out1>
+				</object>
+			</c>
+			<c type="56">
+				<object id="59" script='
+bq="%.2f / %.2f"
+bp="%.2f"
+bo="%.0f %.0f"
+
+B=100
+k=.15
+v=.5
+aI=true
+w=tonumber
+aP=false
+d=nil
+aq=input
+r=math
+aF=string
+g=aF.format
+f=screen.drawText
+aj=output.setNumber
+Y=r.abs
+L=r.atan
+x=r.max
+y=r.min
+S=aq.getBool
+Z=property.getText
+aB=aF.gmatch
+t=r.sin
+q=r.cos
+R=r.pi
+ak=ak or{}ak.aW={bc=function(l)return-l%1*R*2
+end}av={bg=function(b,a,e,ae)return{b=b,a=a,e=e,ae=ae}end,aV=function(al,E,D)local n,aa,ab,W,ac,V=q(al*v),t(al*v),q(E*v),t(E*v),q(D*v),t(D*v);
+local ae=ac*ab*n+V*W*aa;
+local b=V*ab*n-ac*W*aa;
+local a=ac*W*n+V*ab*aa;
+local e=ac*ab*aa-V*W*n;
+return av.bg(b,a,e,ae)end}T=2*R
+ad=0
+af=0
+X=0
+A=d
+N=d
+O=d
+aT=d
+aG=d
+aN=d
+z=d
+ba=d
+aO=0
+at=0
+ay=0
+bb=d
+ai=0
+_=d
+u=0
+am=aP
+ar=0
+function aX(...)local as={}for be,aY in ipairs({...})do as[be]=aq.getNumber(aY)or 0 end
+return table.unpack(as)end
+function onTick()if not p then
+p={}for ah,b,a in aB(Z("kl"),Z("p1"))do
+p[ah]={b=w(b),a=w(a)}end
+end
+if not c then
+c={}for ah,b,a,e,o,ax,ao in aB(Z("rd1"),Z("p2"))do
+c[ah]={b=w(b),a=w(a),e=w(e),o=w(o),ax=w(ax),ao=w(ao)}end
+end
+aA,bj,bf,aL,b,a,e,l,E,al,D=aX(1,2,11,12,13,14,15,16,17,18,19)l=ak.aW.bc(l)local aU,U,ag,b_,bi=S(6),S(1),S(2),S(3),S(4)local bn=av.aV(l,E,D)ar=y(1.0,x(.0,ar+bf))if bi then
+_="donkk"
+u=0
+am=aP
+end
+if _ then
+U=aI
+end
+ai=e
+aO=l
+at=E
+ay=D
+if U and not A then
+A=l
+N=0
+O=0
+elseif not U then
+bk=d
+A=d
+N=d
+O=d
+end
+if ag and not z then
+z=e
+elseif not ag then
+z=d
+end
+local h=A
+local m=N
+local aD=O
+local an=1.0
+if U and ag and z then
+s=z-e
+m=m+y(k,x(-k,s/200*k))end
+if b_ then
+local j=(-11000)-b
+local i=(-8000)-a
+h=L(j,i)end
+if _ then
+if u==0 then
+ap=p[_].b+c[_].b+q(c[_].o)*-1000
+au=p[_].a+c[_].a+t(c[_].o)*-1000
+local P,M=b,a
+local rad=400
+C=ap+q(c[_].o+R/2)*(rad+50)n=au+t(c[_].o+R/2)*(rad+50)local Q=r.sqrt((P-C)*(P-C)+(M-n)*(M-n))if Q&lt;rad then
+P=P*(rad/Q)M=M*(rad/Q)Q=rad
+end
+local aC=r.acos(rad/Q)local aJ=L(M-n,P-C)local az=aJ+aC
+local aR=aJ-aC
+aH=C+rad*q(az)aE=n+rad*t(az)bm=C+rad*q(aR)bl=n+rad*t(aR)J=aH
+K=aE
+j=J-b
+i=K-a
+h=L(j,i)local aS=ap-b
+local aw=au-a
+an=2.5
+if am or(j*j+i*i&lt;B*B)then
+am=aI
+s=(c[_].e+150)-e
+m=m+y(.0,x(-k,s/400*k))an=4
+end
+if aS*aS+aw*aw&lt;B*B then
+u=1
+end
+elseif u==1 then
+local J=p[_].b+c[_].b+q(c[_].o)*-500
+local K=p[_].a+c[_].a+t(c[_].o)*-500
+local j=J-b
+local i=K-a
+h=L(j,i)s=(c[_].e+40)-e
+m=m+y(.0,x(-k,s/150*k))if j*j+i*i&lt;80*80 then
+u=2
+end
+elseif u==2 then
+local J=p[_].b+c[_].b
+local K=p[_].a+c[_].a
+local j=J-b
+local i=K-a
+h=L(j,i)s=(c[_].e+15)-e
+m=m+y(.05,x(-k,s/B*k))if j*j+i*i&lt;50*50 then
+u=3
+end
+elseif u==3 then
+s=(c[_].e+5)-e
+m=m+y(.05,x(-k,s/B*k))h=-c[_].o+R/2
+if aL&lt;20 then
+_=d
+end
+end
+end
+local I=0
+local H=0
+local G=0
+if U and h then
+h=h%T
+aT=h
+aG=m
+aN=aD
+local F=h-l
+if Y((h+T)-l)&lt;Y(F)then
+F=(h+T)-l
+end
+if Y((h-T)-l)&lt;Y(F)then
+F=(h-T)-l
+end
+local bd=m-E
+local bh=aD-D
+local aK=y(v,x(-v,F*.4))I=I+F*an
+G=G+bd*-4+aK
+H=H+bh*4+aK
+else
+bb=d
+ba=d
+A=d
+N=d
+O=d
+end
+local aQ=0
+local aM=0
+if not aU then
+aQ=aA
+else
+aM=aA
+end
+local aZ=bj;
+ad=ad+(aQ-ad)*.1
+af=af+(aM-af)*k
+X=X+(aZ-X)*.02
+I=I+ad
+H=H+af
+G=G+X
+aj(1,1*I)aj(2,.75*H)aj(3,.75*G)end
+function onDraw()if A then
+f(0,10,g(bq,A,aT))f(0,20,g(bq,N,aG))f(0,30,g(bq,O,aN))else
+f(4,4,"angleHold false")end
+f(0,50,g(bp,aO))f(0,60,g(bp,at))f(0,70,g(bp,ay))if z then
+f(45,4,g("%.0f / %.0f",ai,z))else
+f(50,4,g("altitudeHold false %.0f",ai))end
+if _ then
+f(30,40,g(bo,u,aL))f(30,50,g(bo,p[_].b+c[_].b+q(c[_].o)*-500,j or 0))f(30,60,g(bo,p[_].a+c[_].a+t(c[_].o)*-500,i or 0))f(30,90,g("%.0f",c[_].e))f(30,70,g(bo,aH,aE))f(30,80,g(bo,C,n))end
+end
+'>
+					<pos x="2.5" y="1.75"/>
+					<in1 component_id="30">
+						<v 01="0.02" 02="-0.004999" 04="0.010002" 11="0.010002" 12="-0.029574" 13="-19170.947266" 14="-4708.565918" 15="9.352985" 16="-0.354953" 17="0.013685" 18="0.236315" 19="0.000004"/>
+					</in1>
+					<in2 component_id="4" node_index="1">
+						<v/>
+					</in2>
+					<out1>
+						<v 01="-1.852497" 02="-0.224711" 03="-0.187394"/>
+					</out1>
+					<out2>
+						<v/>
+					</out2>
+				</object>
+			</c>
+			<c type="31">
+				<object id="61">
+					<pos x="3.75" y="2"/>
+					<in1 component_id="59">
+						<v 01="-1.852538" 02="-0.224716" 03="-0.18739"/>
+					</in1>
+					<out1 v="-1.852538"/>
+				</object>
+			</c>
+			<c type="31">
+				<object id="62" i="1">
+					<pos x="3.75" y="1.5"/>
+					<in1 component_id="59">
+						<v 01="-1.852538" 02="-0.224716" 03="-0.18739"/>
+					</in1>
+					<out1 v="-0.224716"/>
+				</object>
+			</c>
+			<c type="31">
+				<object id="63" i="2">
+					<pos x="3.75" y="1"/>
+					<in1 component_id="59">
+						<v 01="-1.852538" 02="-0.224716" 03="-0.18739"/>
+					</in1>
+					<out1 v="-0.18739"/>
+				</object>
+			</c>
+			<c type="58">
+				<object id="67" n="kl" v="donkk -20020.9 -3801.3">
+					<pos x="-4" y="2.75"/>
+				</object>
+			</c>
+			<c type="58">
+				<object id="68" n="rd1" v="donkk 985.3 -883.6 7.5 -2.267 450 50">
+					<pos x="-4" y="2"/>
+				</object>
+			</c>
+			<c type="58">
+				<object id="69" n="p1" v="([^ :]+) ([^ ]+) ([^ :]+)">
+					<pos x="-2.75" y="2.75"/>
+				</object>
+			</c>
+			<c type="58">
+				<object id="70" n="p2" v="([^ :]+) ([^ ]+) ([^ ]+) ([^ ]+) ([^ ]+) ([^ ]+) ([^ :]+)">
+					<pos x="-2.75" y="2"/>
+				</object>
+			</c>
+			<c type="31">
+				<object id="74" i="10">
+					<pos x="3.75" y="2.5"/>
+					<in1 component_id="59">
+						<v 01="-1.852538" 02="-0.224716" 03="-0.18739"/>
+					</in1>
+					<out1/>
+				</object>
+			</c>
+		</components>
+		<components_bridge>
+			<c type="7">
+				<object id="5">
+					<pos x="3.75" y="3.25"/>
+					<in1 component_id="59" node_index="1">
+						<v/>
+					</in1>
+					<out1>
+						<v/>
+					</out1>
+				</object>
+			</c>
+			<c type="2">
+				<object id="8">
+					<pos x="-1" y="3.25"/>
+					<in1 v="0.010001"/>
+					<out1 v="0.010001"/>
+				</object>
+			</c>
+			<c type="2">
+				<object id="9">
+					<pos y="3"/>
+					<in1 v="-0.029685"/>
+					<out1 v="-0.029685"/>
+				</object>
+			</c>
+			<c type="2">
+				<object id="15">
+					<pos y="2"/>
+					<in1 v="-0.354948"/>
+					<out1 v="-0.354948"/>
+				</object>
+			</c>
+			<c type="2">
+				<object id="16">
+					<pos x="-1" y="1.75"/>
+					<in1 v="0.013689"/>
+					<out1 v="0.013689"/>
+				</object>
+			</c>
+			<c type="2">
+				<object id="17">
+					<pos y="1.5"/>
+					<in1 v="0.236311"/>
+					<out1 v="0.236311"/>
+				</object>
+			</c>
+			<c type="2">
+				<object id="18">
+					<pos x="-1" y="1.25"/>
+					<in1 v="0.000004"/>
+					<out1 v="0.000004"/>
+				</object>
+			</c>
+			<c type="2">
+				<object id="21">
+					<pos x="-1" y="2.75"/>
+					<in1 v="-19170.947266"/>
+					<out1 v="-19170.947266"/>
+				</object>
+			</c>
+			<c type="2">
+				<object id="22">
+					<pos y="2.5"/>
+					<in1 v="-4708.56543"/>
+					<out1 v="-4708.56543"/>
+				</object>
+			</c>
+			<c type="2">
+				<object id="24">
+					<pos x="-1" y="2.25"/>
+					<in1 v="9.353327"/>
+					<out1 v="9.353327"/>
+				</object>
+			</c>
+			<c type="4">
+				<object id="26">
+					<pos y="3.5"/>
+					<in1>
+						<v 01="0.02" 02="-0.004999" 04="0.010001"/>
+					</in1>
+					<out1>
+						<v 01="0.02" 02="-0.004999" 04="0.010001"/>
+					</out1>
+				</object>
+			</c>
+			<c type="3">
+				<object id="37">
+					<pos x="5.25" y="1"/>
+					<in1 component_id="63" v="-0.18739"/>
+					<out1 v="-0.18739"/>
+				</object>
+			</c>
+			<c type="3">
+				<object id="38">
+					<pos x="5.25" y="2"/>
+					<in1 component_id="61" v="-1.852538"/>
+					<out1 v="-1.852538"/>
+				</object>
+			</c>
+			<c type="3">
+				<object id="39">
+					<pos x="5.25" y="1.5"/>
+					<in1 component_id="62" v="-0.224716"/>
+					<out1 v="-0.224716"/>
+				</object>
+			</c>
+			<c type="3">
+				<object id="73">
+					<pos x="5.25" y="2.5"/>
+					<in1 component_id="74"/>
+					<out1/>
+				</object>
+			</c>
+		</components_bridge>
+		<groups/>
+		<component_states>
+			<c0 id="4" script='
+I=127
+L=255
+q=tonumber
+af=screen
+aK=string
+t=math
+ak=t.floor
+aJ=aK.format
+aO=af.drawText
+Y=af.setColor
+O=property.getText
+aB=aK.gmatch
+aI=af.drawLine
+w=t.cos
+n=t.sin
+ac=t.pi
+aR={}aR.aU=function()x,p=48,48
+bi=-.025
+b_=47
+aZ=p
+az=.35
+ay=.36
+aY=0
+be=-7/4
+bb=1
+aF=3
+W=2500
+bg=1
+A=ac*2
+aw=function(_,aL,D)return _&lt;aL and aL or _&gt;D and D or _ end
+ae=function(ap,aQ)local i={}for c=1,#aQ do
+i[c]={}for T=1,#ap[1]do
+i[c][T]=0
+for X=1,#ap do
+i[c][T]=i[c][T]+ap[X][T]*aQ[c][X]end
+end
+end
+return i
+end
+aV=function(P)local aC,o={},1
+for c=1,#P do
+local _,a,b=P[c][1],P[c][2],P[c][3]local aj,an,ah,s=g[1][1]*_+g[2][1]*a+g[3][1]*b+g[4][1],g[1][2]*_+g[2][2]*a+g[3][2]*b+g[4][2],g[1][3]*_+g[2][3]*a+g[3][3]*b+g[4][3],g[1][4]*_+g[2][4]*a+g[3][4]*b+g[4][4]if(-s&lt;=aj and aj&lt;=s)and(-s&lt;=an and an&lt;=s)and(0&lt;=ah and ah&lt;=s)then
+aC[o]={aj/s*x+b_,an/s*p+aZ,ah/s,c}o=o+1
+end
+end
+return aC
+end
+function u(_,a,b)return{_=_ or 0;a=a or 0;b=b or 0;
+au=function(k,h)return u(k._+h._,k.a+h.a,k.b+h.b)end;
+aA=function(k,h)return u(k._-h._,k.a-h.a,k.b-h.b)end;
+aD=function(k,h)return u(k._*h,k.a*h,k.b*h)end}end
+e=u()aE=u()ax=u()local ad={aS=function(...)e._,e.a,e.b,b,aW,ba,aT,bc,aX,bj=...
+aG=false
+m=u(ba*A,t.atan(n(bc*A),n(aT*A)),aW*A)e,aE=e:au(e:aA(aE):aD(aF)),e
+m,ax=m:au(m:aA(ax):aD(aF)),m
+Z=aw(aX,-.277,.277)*.408*A
+aH=aw(bj,-1/8,1/8)*.9*A+.404+t.abs(Z/.7101)*.122
+av=w(Z)*.1523
+ab=n(Z)*.1523
+aM=w(aH)*av+(aG and .132 or .161)ai=n(aH)*av-(aG and .141 or .023)end,bh=function()o=bi+5/8-aM
+i=az-ab
+D=-az-ab
+al=ay-ai
+h=-ay-ai
+bd={{2*o/(i-D)*bg,0,0,0},{-(i+D)/(i-D),-(h+al)/(h-al),W/(W-o),1},{0,2*o/(h-al),0,0},{0,0,-W*o/(W-o),0}}local E,J,F,x,p,H=n(m._),n(m.a),n(m.b),w(m._),w(m.a),w(m.b)G={{H*p-F*E*J,F*p+H*E*J,-x*J,0},{-F*x,H*x,E,0},{H*J+F*E*p,F*J-H*E*p,x*p,0},{0,0,0,1}}aa=ae(G,{{aY+ab,be+aM,bb+ai,1}})[1]aP={}for c=1,4 do
+aP[c]={G[1][c],G[2][c],G[3][c],G[4][c]}end
+g=ae(bd,ae(aP,{{1,0,0,0},{0,1,0,0},{0,0,1,0},{-(e._+aa[1]),-(e.a+aa[2]),-(e.b+aa[3]),1}}))end,bf=function(y,z,C,V,N,R)K=aV({{y,z,C},{V,N,R}})if#K==2 then
+aI(K[1][1],K[1][2],K[2][1],K[2][2])end
+end}function ad.B(v,y,z,C,V,N,R)for c=1,v do
+ad.bf(y+(V-y)*(c-1)/v,z+(N-z)*(c-1)/v,C+(R-C)*(c-1)/v,y+(V-y)*c/v,z+(N-z)*c/v,C+(R-C)*c/v)end
+end
+return ad
+end
+local r=aR.aU();
+local e={}am=.5
+aN=90
+function ag(...)local i={}for c,d in ipairs({...})do i[c]=input.getNumber(d)or 0 end
+return table.unpack(i)end
+function onTick()if not at then
+at={}for aq,_,a in aB(O("kl"),O("p1"))do
+at[aq]={_=q(_),a=q(a)}end
+end
+if not ar then
+ar={}for aq,_,a,b,U,l,as in aB(O("rd1"),O("p2"))do
+ar[aq]={_=q(_),a=q(a),b=q(b),U=q(U),l=q(l),as=q(as)}end
+end
+am,aN=ag(11,12)e._,e.a,e.b=ag(13,14,15)r.aS(ag(13,14,15,15,16,17,18,19,9,10))end
+function onDraw()Y(0,L,0,200)aI(85,86,85-(w(ac*am)*10),86-(n(ac*am)*10.0))aO(76,90,aJ("%.1f",aN))aO(0,10,aJ("%.0f / %.0f / %.0f",e._,e.a,e.b))r.bh()Y(63,I,L,100)local j=250
+local M=t.min(4,ak(e.b/25))if M&gt;0 then
+for _=-M,M do
+for a=-M,M do
+local Q=ak(e._/j)*j+_*j
+local S=ak(e.a/j)*j+a*j
+r.B(4,Q,S+j/2,0,Q+j,S+j/2,0)r.B(4,Q+j/2,S,0,Q+j/2,S+j,0)end
+end
+end
+for X,d in pairs(ar)do
+local ao=at[X]if ao then
+local _,a,f,sin,cos=d._+ao._,d.a+ao.a,d.as/2,n(d.U),w(d.U)Y(L,I,I,80)r.B(16,_+sin*f,a+-cos*f,d.b,_+-sin*f,a+cos*f,d.b)r.B(16,_+cos*d.l+sin*f,a+sin*d.l+-cos*f,d.b,_+cos*d.l+-sin*f,a+sin*d.l+cos*f,d.b)Y(L,L,I,I)r.B(16,_+sin*f,a+-cos*f,d.b,_+cos*d.l+sin*f,a+sin*d.l+-cos*f,d.b)r.B(16,_+cos*d.l+-sin*f,a+sin*d.l+cos*f,d.b,_+-sin*f,a+cos*f,d.b)end
+end
+end
+'>
+				<pos x="2.5" y="3.25"/>
+				<in1 component_id="30">
+					<v 01="0.02" 02="-0.004999" 04="0.010002" 12="-0.029541" 13="-19170.947266" 14="-4708.56543" 15="9.353177" 16="-0.354951" 17="0.013686" 18="0.236314" 19="0.000004"/>
+				</in1>
+				<in2>
+					<v/>
+				</in2>
+				<out1>
+					<v/>
+				</out1>
+				<out2>
+					<v/>
+				</out2>
+			</c0>
+			<c1 id="30" count="9" offset="10">
+				<pos x="1.25" y="1.25"/>
+				<inc component_id="26">
+					<v 01="0.02" 02="-0.004999" 04="0.010001"/>
+				</inc>
+				<in1 component_id="74"/>
+				<in2 component_id="9" v="-0.029685"/>
+				<in3 component_id="21" v="-19170.947266"/>
+				<in4 component_id="22" v="-4708.56543"/>
+				<in5 component_id="24" v="9.353327"/>
+				<in6 component_id="15" v="-0.354948"/>
+				<in7 component_id="16" v="0.013689"/>
+				<in8 component_id="17" v="0.236311"/>
+				<in9 component_id="18" v="0.000004"/>
+				<out1>
+					<v 01="0.02" 02="-0.004999" 04="0.010001" 12="-0.029685" 13="-19170.947266" 14="-4708.56543" 15="9.353327" 16="-0.354948" 17="0.013689" 18="0.236311" 19="0.000004"/>
+				</out1>
+			</c1>
+			<c2 id="59" script='
+bq="%.2f / %.2f"
+bp="%.2f"
+bo="%.0f %.0f"
+
+B=100
+k=.15
+v=.5
+aI=true
+w=tonumber
+aP=false
+d=nil
+aq=input
+r=math
+aF=string
+g=aF.format
+f=screen.drawText
+aj=output.setNumber
+Y=r.abs
+L=r.atan
+x=r.max
+y=r.min
+S=aq.getBool
+Z=property.getText
+aB=aF.gmatch
+t=r.sin
+q=r.cos
+R=r.pi
+ak=ak or{}ak.aW={bc=function(l)return-l%1*R*2
+end}av={bg=function(b,a,e,ae)return{b=b,a=a,e=e,ae=ae}end,aV=function(al,E,D)local n,aa,ab,W,ac,V=q(al*v),t(al*v),q(E*v),t(E*v),q(D*v),t(D*v);
+local ae=ac*ab*n+V*W*aa;
+local b=V*ab*n-ac*W*aa;
+local a=ac*W*n+V*ab*aa;
+local e=ac*ab*aa-V*W*n;
+return av.bg(b,a,e,ae)end}T=2*R
+ad=0
+af=0
+X=0
+A=d
+N=d
+O=d
+aT=d
+aG=d
+aN=d
+z=d
+ba=d
+aO=0
+at=0
+ay=0
+bb=d
+ai=0
+_=d
+u=0
+am=aP
+ar=0
+function aX(...)local as={}for be,aY in ipairs({...})do as[be]=aq.getNumber(aY)or 0 end
+return table.unpack(as)end
+function onTick()if not p then
+p={}for ah,b,a in aB(Z("kl"),Z("p1"))do
+p[ah]={b=w(b),a=w(a)}end
+end
+if not c then
+c={}for ah,b,a,e,o,ax,ao in aB(Z("rd1"),Z("p2"))do
+c[ah]={b=w(b),a=w(a),e=w(e),o=w(o),ax=w(ax),ao=w(ao)}end
+end
+aA,bj,bf,aL,b,a,e,l,E,al,D=aX(1,2,11,12,13,14,15,16,17,18,19)l=ak.aW.bc(l)local aU,U,ag,b_,bi=S(6),S(1),S(2),S(3),S(4)local bn=av.aV(l,E,D)ar=y(1.0,x(.0,ar+bf))if bi then
+_="donkk"
+u=0
+am=aP
+end
+if _ then
+U=aI
+end
+ai=e
+aO=l
+at=E
+ay=D
+if U and not A then
+A=l
+N=0
+O=0
+elseif not U then
+bk=d
+A=d
+N=d
+O=d
+end
+if ag and not z then
+z=e
+elseif not ag then
+z=d
+end
+local h=A
+local m=N
+local aD=O
+local an=1.0
+if U and ag and z then
+s=z-e
+m=m+y(k,x(-k,s/200*k))end
+if b_ then
+local j=(-11000)-b
+local i=(-8000)-a
+h=L(j,i)end
+if _ then
+if u==0 then
+ap=p[_].b+c[_].b+q(c[_].o)*-1000
+au=p[_].a+c[_].a+t(c[_].o)*-1000
+local P,M=b,a
+local rad=400
+C=ap+q(c[_].o+R/2)*(rad+50)n=au+t(c[_].o+R/2)*(rad+50)local Q=r.sqrt((P-C)*(P-C)+(M-n)*(M-n))if Q&lt;rad then
+P=P*(rad/Q)M=M*(rad/Q)Q=rad
+end
+local aC=r.acos(rad/Q)local aJ=L(M-n,P-C)local az=aJ+aC
+local aR=aJ-aC
+aH=C+rad*q(az)aE=n+rad*t(az)bm=C+rad*q(aR)bl=n+rad*t(aR)J=aH
+K=aE
+j=J-b
+i=K-a
+h=L(j,i)local aS=ap-b
+local aw=au-a
+an=2.5
+if am or(j*j+i*i&lt;B*B)then
+am=aI
+s=(c[_].e+150)-e
+m=m+y(.0,x(-k,s/400*k))an=4
+end
+if aS*aS+aw*aw&lt;B*B then
+u=1
+end
+elseif u==1 then
+local J=p[_].b+c[_].b+q(c[_].o)*-500
+local K=p[_].a+c[_].a+t(c[_].o)*-500
+local j=J-b
+local i=K-a
+h=L(j,i)s=(c[_].e+40)-e
+m=m+y(.0,x(-k,s/150*k))if j*j+i*i&lt;80*80 then
+u=2
+end
+elseif u==2 then
+local J=p[_].b+c[_].b
+local K=p[_].a+c[_].a
+local j=J-b
+local i=K-a
+h=L(j,i)s=(c[_].e+15)-e
+m=m+y(.05,x(-k,s/B*k))if j*j+i*i&lt;50*50 then
+u=3
+end
+elseif u==3 then
+s=(c[_].e+5)-e
+m=m+y(.05,x(-k,s/B*k))h=-c[_].o+R/2
+if aL&lt;20 then
+_=d
+end
+end
+end
+local I=0
+local H=0
+local G=0
+if U and h then
+h=h%T
+aT=h
+aG=m
+aN=aD
+local F=h-l
+if Y((h+T)-l)&lt;Y(F)then
+F=(h+T)-l
+end
+if Y((h-T)-l)&lt;Y(F)then
+F=(h-T)-l
+end
+local bd=m-E
+local bh=aD-D
+local aK=y(v,x(-v,F*.4))I=I+F*an
+G=G+bd*-4+aK
+H=H+bh*4+aK
+else
+bb=d
+ba=d
+A=d
+N=d
+O=d
+end
+local aQ=0
+local aM=0
+if not aU then
+aQ=aA
+else
+aM=aA
+end
+local aZ=bj;
+ad=ad+(aQ-ad)*.1
+af=af+(aM-af)*k
+X=X+(aZ-X)*.02
+I=I+ad
+H=H+af
+G=G+X
+aj(1,1*I)aj(2,.75*H)aj(3,.75*G)end
+function onDraw()if A then
+f(0,10,g(bq,A,aT))f(0,20,g(bq,N,aG))f(0,30,g(bq,O,aN))else
+f(4,4,"angleHold false")end
+f(0,50,g(bp,aO))f(0,60,g(bp,at))f(0,70,g(bp,ay))if z then
+f(45,4,g("%.0f / %.0f",ai,z))else
+f(50,4,g("altitudeHold false %.0f",ai))end
+if _ then
+f(30,40,g(bo,u,aL))f(30,50,g(bo,p[_].b+c[_].b+q(c[_].o)*-500,j or 0))f(30,60,g(bo,p[_].a+c[_].a+t(c[_].o)*-500,i or 0))f(30,90,g("%.0f",c[_].e))f(30,70,g(bo,aH,aE))f(30,80,g(bo,C,n))end
+end
+'>
+				<pos x="2.5" y="1.75"/>
+				<in1 component_id="30">
+					<v 01="0.02" 02="-0.004999" 04="0.010002" 11="0.010002" 12="-0.029574" 13="-19170.947266" 14="-4708.565918" 15="9.352985" 16="-0.354953" 17="0.013685" 18="0.236315" 19="0.000004"/>
+				</in1>
+				<in2 component_id="4" node_index="1">
+					<v/>
+				</in2>
+				<out1>
+					<v 01="-1.852497" 02="-0.224711" 03="-0.187394"/>
+				</out1>
+				<out2>
+					<v/>
+				</out2>
+			</c2>
+			<c3 id="61">
+				<pos x="3.75" y="2"/>
+				<in1 component_id="59">
+					<v 01="-1.852538" 02="-0.224716" 03="-0.18739"/>
+				</in1>
+				<out1 v="-1.852538"/>
+			</c3>
+			<c4 id="62" i="1">
+				<pos x="3.75" y="1.5"/>
+				<in1 component_id="59">
+					<v 01="-1.852538" 02="-0.224716" 03="-0.18739"/>
+				</in1>
+				<out1 v="-0.224716"/>
+			</c4>
+			<c5 id="63" i="2">
+				<pos x="3.75" y="1"/>
+				<in1 component_id="59">
+					<v 01="-1.852538" 02="-0.224716" 03="-0.18739"/>
+				</in1>
+				<out1 v="-0.18739"/>
+			</c5>
+			<c6 id="67" n="kl" v="donkk -20020.9 -3801.3">
+				<pos x="-4" y="2.75"/>
+			</c6>
+			<c7 id="68" n="rd1" v="donkk 985.3 -883.6 7.5 -2.267 450 50">
+				<pos x="-4" y="2"/>
+			</c7>
+			<c8 id="69" n="p1" v="([^ :]+) ([^ ]+) ([^ :]+)">
+				<pos x="-2.75" y="2.75"/>
+			</c8>
+			<c9 id="70" n="p2" v="([^ :]+) ([^ ]+) ([^ ]+) ([^ ]+) ([^ ]+) ([^ ]+) ([^ :]+)">
+				<pos x="-2.75" y="2"/>
+			</c9>
+			<c10 id="74" i="10">
+				<pos x="3.75" y="2.5"/>
+				<in1 component_id="59">
+					<v 01="-1.852538" 02="-0.224716" 03="-0.18739"/>
+				</in1>
+				<out1/>
+			</c10>
+		</component_states>
+		<component_bridge_states>
+			<c0 id="5">
+				<pos x="3.75" y="3.25"/>
+				<in1 component_id="59" node_index="1">
+					<v/>
+				</in1>
+				<out1>
+					<v/>
+				</out1>
+			</c0>
+			<c1 id="8">
+				<pos x="-1" y="3.25"/>
+				<in1 v="0.010001"/>
+				<out1 v="0.010001"/>
+			</c1>
+			<c2 id="9">
+				<pos y="3"/>
+				<in1 v="-0.029685"/>
+				<out1 v="-0.029685"/>
+			</c2>
+			<c3 id="15">
+				<pos y="2"/>
+				<in1 v="-0.354948"/>
+				<out1 v="-0.354948"/>
+			</c3>
+			<c4 id="16">
+				<pos x="-1" y="1.75"/>
+				<in1 v="0.013689"/>
+				<out1 v="0.013689"/>
+			</c4>
+			<c5 id="17">
+				<pos y="1.5"/>
+				<in1 v="0.236311"/>
+				<out1 v="0.236311"/>
+			</c5>
+			<c6 id="18">
+				<pos x="-1" y="1.25"/>
+				<in1 v="0.000004"/>
+				<out1 v="0.000004"/>
+			</c6>
+			<c7 id="21">
+				<pos x="-1" y="2.75"/>
+				<in1 v="-19170.947266"/>
+				<out1 v="-19170.947266"/>
+			</c7>
+			<c8 id="22">
+				<pos y="2.5"/>
+				<in1 v="-4708.56543"/>
+				<out1 v="-4708.56543"/>
+			</c8>
+			<c9 id="24">
+				<pos x="-1" y="2.25"/>
+				<in1 v="9.353327"/>
+				<out1 v="9.353327"/>
+			</c9>
+			<c10 id="26">
+				<pos y="3.5"/>
+				<in1>
+					<v 01="0.02" 02="-0.004999" 04="0.010001"/>
+				</in1>
+				<out1>
+					<v 01="0.02" 02="-0.004999" 04="0.010001"/>
+				</out1>
+			</c10>
+			<c11 id="37">
+				<pos x="5.25" y="1"/>
+				<in1 component_id="63" v="-0.18739"/>
+				<out1 v="-0.18739"/>
+			</c11>
+			<c12 id="38">
+				<pos x="5.25" y="2"/>
+				<in1 component_id="61" v="-1.852538"/>
+				<out1 v="-1.852538"/>
+			</c12>
+			<c13 id="39">
+				<pos x="5.25" y="1.5"/>
+				<in1 component_id="62" v="-0.224716"/>
+				<out1 v="-0.224716"/>
+			</c13>
+			<c14 id="73">
+				<pos x="5.25" y="2.5"/>
+				<in1 component_id="74"/>
+				<out1/>
+			</c14>
+		</component_bridge_states>
+		<group_states/>
+	</group>
+</microprocessor>
+

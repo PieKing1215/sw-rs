@@ -7,6 +7,7 @@ fn main() {
     let mc: Microcontroller = quick_xml::de::from_str(&st).unwrap();
     let mut se = quick_xml::se::Serializer::new(String::new());
     se.indent('\t', 1);
+    se.escape(quick_xml::se::QuoteLevel::Partial);
     let header = r#"<?xml version="1.0" encoding="UTF-8"?>"#;
     let out = format!("{header}\n{}", mc.serialize(se).unwrap());
 

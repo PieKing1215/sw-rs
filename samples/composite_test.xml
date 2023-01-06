@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<microprocessor name="Microcontroller" description="No description set." width="2" length="2" id_counter="11" id_counter_node="0">
+	<nodes/>
+	<group>
+		<data>
+			<inputs/>
+			<outputs/>
+		</data>
+		<components>
+			<c type="29">
+				<object id="1">
+					<pos x="0.25" y="1.5"/>
+					<in1>
+						<v/>
+					</in1>
+					<out1/>
+				</object>
+			</c>
+			<c type="31">
+				<object id="2">
+					<pos x="1.5" y="1.5"/>
+					<in1>
+						<v/>
+					</in1>
+					<out1/>
+				</object>
+			</c>
+			<c type="40">
+				<object id="3" count="1">
+					<pos x="2.75" y="1.25"/>
+					<inc>
+						<v/>
+					</inc>
+					<in1/>
+					<out1>
+						<v/>
+					</out1>
+				</object>
+			</c>
+			<c type="41">
+				<object id="4" count="1">
+					<pos x="4" y="1.25"/>
+					<inc>
+						<v/>
+					</inc>
+					<in1/>
+					<out1>
+						<v/>
+					</out1>
+				</object>
+			</c>
+			<c type="29">
+				<object id="6" i="-1">
+					<pos x="0.25" y="0.5"/>
+					<in1>
+						<v/>
+					</in1>
+					<out1/>
+					<in2/>
+				</object>
+			</c>
+			<c type="31">
+				<object id="7" i="-1">
+					<pos x="1.5" y="0.5"/>
+					<in1>
+						<v/>
+					</in1>
+					<out1/>
+					<in2/>
+				</object>
+			</c>
+			<c type="40">
+				<object id="8" count="3" offset="1">
+					<pos x="2.75" y="-0.25"/>
+					<inc>
+						<v/>
+					</inc>
+					<in1/>
+					<in2/>
+					<in3/>
+					<out1>
+						<v/>
+					</out1>
+				</object>
+			</c>
+			<c type="40">
+				<object id="9" count="3" offset="-1">
+					<pos x="2.75" y="-2"/>
+					<inc>
+						<v/>
+					</inc>
+					<in1/>
+					<in2/>
+					<in3/>
+					<inoff/>
+					<out1>
+						<v/>
+					</out1>
+				</object>
+			</c>
+			<c type="41">
+				<object id="10" count="3" offset="1">
+					<pos x="4" y="-0.25"/>
+					<inc>
+						<v/>
+					</inc>
+					<in1/>
+					<in2/>
+					<in3/>
+					<out1>
+						<v/>
+					</out1>
+				</object>
+			</c>
+			<c type="41">
+				<object id="11" count="3" offset="-1">
+					<pos x="4" y="-2"/>
+					<inc>
+						<v/>
+					</inc>
+					<in1/>
+					<in2/>
+					<in3/>
+					<inoff/>
+					<out1>
+						<v/>
+					</out1>
+				</object>
+			</c>
+		</components>
+		<components_bridge/>
+		<groups/>
+		<component_states>
+			<c0 id="1">
+				<pos x="0.25" y="1.5"/>
+				<in1>
+					<v/>
+				</in1>
+				<out1/>
+			</c0>
+			<c1 id="2">
+				<pos x="1.5" y="1.5"/>
+				<in1>
+					<v/>
+				</in1>
+				<out1/>
+			</c1>
+			<c2 id="3" count="1">
+				<pos x="2.75" y="1.25"/>
+				<inc>
+					<v/>
+				</inc>
+				<in1/>
+				<out1>
+					<v/>
+				</out1>
+			</c2>
+			<c3 id="4" count="1">
+				<pos x="4" y="1.25"/>
+				<inc>
+					<v/>
+				</inc>
+				<in1/>
+				<out1>
+					<v/>
+				</out1>
+			</c3>
+			<c4 id="6" i="-1">
+				<pos x="0.25" y="0.5"/>
+				<in1>
+					<v/>
+				</in1>
+				<out1/>
+				<in2/>
+			</c4>
+			<c5 id="7" i="-1">
+				<pos x="1.5" y="0.5"/>
+				<in1>
+					<v/>
+				</in1>
+				<out1/>
+				<in2/>
+			</c5>
+			<c6 id="8" count="3" offset="1">
+				<pos x="2.75" y="-0.25"/>
+				<inc>
+					<v/>
+				</inc>
+				<in1/>
+				<in2/>
+				<in3/>
+				<out1>
+					<v/>
+				</out1>
+			</c6>
+			<c7 id="9" count="3" offset="-1">
+				<pos x="2.75" y="-2"/>
+				<inc>
+					<v/>
+				</inc>
+				<in1/>
+				<in2/>
+				<in3/>
+				<inoff/>
+				<out1>
+					<v/>
+				</out1>
+			</c7>
+			<c8 id="10" count="3" offset="1">
+				<pos x="4" y="-0.25"/>
+				<inc>
+					<v/>
+				</inc>
+				<in1/>
+				<in2/>
+				<in3/>
+				<out1>
+					<v/>
+				</out1>
+			</c8>
+			<c9 id="11" count="3" offset="-1">
+				<pos x="4" y="-2"/>
+				<inc>
+					<v/>
+				</inc>
+				<in1/>
+				<in2/>
+				<in3/>
+				<inoff/>
+				<out1>
+					<v/>
+				</out1>
+			</c9>
+		</component_states>
+		<component_bridge_states/>
+		<group_states/>
+	</group>
+</microprocessor>
+

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<microprocessor width="1" length="1">
+	<nodes/>
+	<group>
+		<data>
+			<inputs/>
+			<outputs/>
+		</data>
+		<components/>
+		<components_bridge/>
+		<groups/>
+		<component_states/>
+		<component_bridge_states/>
+		<group_states/>
+	</group>
+</microprocessor>
+

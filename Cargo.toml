@@ -15,8 +15,8 @@ dirs = "4.0"
 pretty_assertions = "1.3"
 
 [patch.crates-io]
-# adds quote level setting and automatically uses single quotes for attributes containing double quotes
+# adds quote level setting, allows attribute names to start with numbers, uses single quotes for attributes containing double quotes
 # see https://github.com/tafia/quick-xml/issues/362
-quick-xml = { path = "../rust/quick-xml" }
+quick-xml = { git = "https://github.com/PieKing1215/quick-xml" }
 # removes duplicate check on insert
 fakemap = { git = "https://github.com/PieKing1215/fakemap_dup" }

@@ -53,55 +53,55 @@ where
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Default)]
-pub struct ConnectionV {
+pub(crate) struct ConnectionV {
     #[serde(rename = "@bools", default, skip_serializing_if = "is_default")]
-    bools: Option<String>, // ??
+    __bools: Option<String>, // ??
     #[serde(rename = "@01", default, skip_serializing_if = "is_default")]
-    _01: Option<String>, // ??
+    __01: Option<String>, // ??
     #[serde(rename = "@02", default, skip_serializing_if = "is_default")]
-    _02: Option<String>, // ??
+    __02: Option<String>, // ??
     #[serde(rename = "@03", default, skip_serializing_if = "is_default")]
-    _03: Option<String>, // ??
+    __03: Option<String>, // ??
     #[serde(rename = "@04", default, skip_serializing_if = "is_default")]
-    _04: Option<String>, // ??
+    __04: Option<String>, // ??
     #[serde(rename = "@05", default, skip_serializing_if = "is_default")]
-    _05: Option<String>, // ??
+    __05: Option<String>, // ??
     #[serde(rename = "@06", default, skip_serializing_if = "is_default")]
-    _06: Option<String>, // ??
+    __06: Option<String>, // ??
     #[serde(rename = "@07", default, skip_serializing_if = "is_default")]
-    _07: Option<String>, // ??
+    __07: Option<String>, // ??
     #[serde(rename = "@08", default, skip_serializing_if = "is_default")]
-    _08: Option<String>, // ??
+    __08: Option<String>, // ??
     #[serde(rename = "@09", default, skip_serializing_if = "is_default")]
-    _09: Option<String>, // ??
+    __09: Option<String>, // ??
     #[serde(rename = "@10", default, skip_serializing_if = "is_default")]
-    _10: Option<String>, // ??
+    __10: Option<String>, // ??
     #[serde(rename = "@11", default, skip_serializing_if = "is_default")]
-    _11: Option<String>, // ??
+    __11: Option<String>, // ??
     #[serde(rename = "@12", default, skip_serializing_if = "is_default")]
-    _12: Option<String>, // ??
+    __12: Option<String>, // ??
     #[serde(rename = "@13", default, skip_serializing_if = "is_default")]
-    _13: Option<String>, // ??
+    __13: Option<String>, // ??
     #[serde(rename = "@14", default, skip_serializing_if = "is_default")]
-    _14: Option<String>, // ??
+    __14: Option<String>, // ??
     #[serde(rename = "@15", default, skip_serializing_if = "is_default")]
-    _15: Option<String>, // ??
+    __15: Option<String>, // ??
     #[serde(rename = "@16", default, skip_serializing_if = "is_default")]
-    _16: Option<String>, // ??
+    __16: Option<String>, // ??
     #[serde(rename = "@17", default, skip_serializing_if = "is_default")]
-    _17: Option<String>, // ??
+    __17: Option<String>, // ??
     #[serde(rename = "@18", default, skip_serializing_if = "is_default")]
-    _18: Option<String>, // ??
+    __18: Option<String>, // ??
     #[serde(rename = "@19", default, skip_serializing_if = "is_default")]
-    _19: Option<String>, // ??
+    __19: Option<String>, // ??
     #[serde(rename = "@20", default, skip_serializing_if = "is_default")]
-    _20: Option<String>, // ??
+    __20: Option<String>, // ??
 }
 
 impl core::fmt::Debug for ConnectionV {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("ConnectionV")
-            .field("bools", &self.bools)
+            .field("__bools", &self.__bools)
             .finish()
     }
 }
@@ -109,10 +109,10 @@ impl core::fmt::Debug for ConnectionV {
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct TypedInputConnection<T: CompileType> {
     #[serde(flatten)]
-    connection: Option<ComponentConnection>,
+    pub connection: Option<ComponentConnection>,
 
     #[serde(rename = "@v", default, skip_serializing_if = "is_default")]
-    _v: Option<String>,
+    v_attr: Option<String>,
     #[serde(default, skip_serializing_if = "skip_connection::<T>")]
     v: ConnectionV,
     #[serde(skip, default)]
@@ -132,7 +132,7 @@ impl<T: CompileType> TypedInputConnection<T> {
     pub fn new(component_id: u32, node_index: u8) -> Self {
         Self {
             connection: Some(ComponentConnection { component_id, node_index }),
-            _v: None,
+            v_attr: None,
             v: ConnectionV::default(),
             _phantom: PhantomData,
         }
@@ -142,7 +142,7 @@ impl<T: CompileType> TypedInputConnection<T> {
     pub fn empty() -> Self {
         Self {
             connection: None,
-            _v: None,
+            v_attr: None,
             v: ConnectionV::default(),
             _phantom: PhantomData,
         }
@@ -152,7 +152,7 @@ impl<T: CompileType> TypedInputConnection<T> {
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct TypedOutputConnection<T: CompileType> {
     #[serde(rename = "@v", default, skip_serializing_if = "is_default")]
-    _v: Option<String>,
+    v_attr: Option<String>,
     #[serde(default, skip_serializing_if = "skip_connection::<T>")]
     v: ConnectionV,
     #[serde(skip, default)]
@@ -732,11 +732,11 @@ components! {
         expr: String,
 
         #[serde(rename = "@p1", default, skip_serializing_if="is_default")]
-        p1: String, // always "340282346638528859811704183484516925440" (f32::MAX) ?
+        __p1: String, // always "340282346638528859811704183484516925440" (f32::MAX) ??
         #[serde(rename = "@p2", default, skip_serializing_if="is_default")]
-        p2: String, // always "340282346638528859811704183484516925440" (f32::MAX) ?
+        __p2: String, // always "340282346638528859811704183484516925440" (f32::MAX) ??
         #[serde(rename = "@p3", default, skip_serializing_if="is_default")]
-        p3: String, // always "340282346638528859811704183484516925440" (f32::MAX) ?
+        __p3: String, // always "340282346638528859811704183484516925440" (f32::MAX) ??
     },
     11 = Clamp[input(1): Number][out(1): Number]{
         min: TextValue,
@@ -751,7 +751,7 @@ components! {
         reset_value: TextValue,
 
         #[serde(rename = "@memory", default, skip_serializing_if = "is_default")]
-        memory: Option<String>, // ??
+        __memory: Option<String>, // ??
     },
     14 = Abs[input(1): Number][out(1): Number]{},
     15 = ConstantNum[][out(1): Number]{
@@ -781,13 +781,13 @@ components! {
     22 = NumericalSwitchbox[on(1): Number, off(2): Number, switch(3): OnOff][out(1): Number]{},
     23 = PIDController[setpoint(1): Number, process_var(2): Number, active(3): OnOff][out(1): Number]{
         #[serde(rename = "@te", default, skip_serializing_if = "is_default")]
-        te: Option<String>, // ??
+        __te: Option<String>, // ??
         #[serde(rename = "@p2", default, skip_serializing_if = "is_default")]
-        p2: Option<String>, // ??
+        __p2: Option<String>, // ??
         #[serde(rename = "@pe", default, skip_serializing_if = "is_default")]
-        pe: Option<String>, // ??
+        __pe: Option<String>, // ??
         #[serde(rename = "@pes", default, skip_serializing_if = "is_default")]
-        pes: Option<String>, // ??
+        __pes: Option<String>, // ??
 
         kp: TextValue,
         ki: TextValue,
@@ -795,7 +795,7 @@ components! {
     },
     24 = SRLatch[set(1): OnOff, reset(2): OnOff][out(1): OnOff, not_out(2): OnOff]{
         #[serde(rename = "@p1", default, skip_serializing_if = "is_default")]
-        p1: Option<String>, // ??
+        __p1: Option<String>, // ??
     },
     25 = JKFlipFlop[set(1): OnOff, reset(2): OnOff][out(1): OnOff, not_out(2): OnOff]{},
     26 = Capacitor[charge(1): OnOff][stored(1): OnOff]{
@@ -805,11 +805,11 @@ components! {
         dt: f32,
 
         #[serde(rename = "@c1", default, skip_serializing_if = "is_default")]
-        c1: Option<String>, // ??
+        __c1: Option<String>, // ??
         #[serde(rename = "@c2", default, skip_serializing_if = "is_default")]
-        c2: Option<String>, // ??
+        __c2: Option<String>, // ??
         #[serde(rename = "@p", default, skip_serializing_if = "is_default")]
-        p: Option<String>, // ??
+        __p: Option<String>, // ??
     },
     27 = Blinker[control(1): OnOff][out(1): OnOff]{
         #[serde(rename = "@on", default = "one", skip_serializing_if="is_one")]
@@ -818,7 +818,7 @@ components! {
         off: f32,
 
         #[serde(rename = "@c", default, skip_serializing_if = "is_default")]
-        c: Option<String>, // ??
+        __c: Option<String>, // ??
     },
     28 = PushToToggle[toggle(1): OnOff][state(1): OnOff]{},
     29 = CompositeReadOnOff[composite(1): Composite, variable_channel(2): Number][out(1): OnOff]{
@@ -856,9 +856,9 @@ components! {
     },
     35 = Delta[input(1): Number][out(1): Number]{
         #[serde(rename = "@vp", default, skip_serializing_if = "is_default")]
-        vp: Option<String>, // ??
+        __vp: Option<String>, // ??
         #[serde(rename = "@ip", default, skip_serializing_if = "is_default")]
-        ip: Option<String>, // ??
+        __ip: Option<String>, // ??
     },
     36 = Func8n[x(1): Number, y(2): Number, z(3): Number, w(4): Number, a(5): Number, b(6): Number, c(7): Number, d(8): Number][out(1): Number]{
         #[serde(rename = "@e", default, skip_serializing_if = "is_default")]
@@ -869,7 +869,7 @@ components! {
         mode: u8, // 1 for clamp, 0 for disabled
 
         #[serde(rename = "@is", default, skip_serializing_if = "is_default")]
-        is: Option<String>, // ??
+        __is: Option<String>, // ??
 
         #[serde(rename = "r")]
         reset_val: TextValue,
@@ -883,13 +883,13 @@ components! {
     38 = Modulo[input_a(1): Number, input_b(2): Number][out(1): Number]{},
     39 = PIDControllerAdvanced[setpoint(1): Number, process_var(2): Number, p(3): Number, i(4): Number, d(5): Number, active(6): OnOff][out(1): Number]{
         #[serde(rename = "@te", default, skip_serializing_if = "is_default")]
-        te: Option<String>, // ??
+        __te: Option<String>, // ??
         #[serde(rename = "@p2", default, skip_serializing_if = "is_default")]
-        p2: Option<String>, // ??
+        __p2: Option<String>, // ??
         #[serde(rename = "@pe", default, skip_serializing_if = "is_default")]
-        pe: Option<String>, // ??
+        __pe: Option<String>, // ??
         #[serde(rename = "@pes", default, skip_serializing_if = "is_default")]
-        pes: Option<String>, // ??
+        __pes: Option<String>, // ??
     },
     // NOTE: CompositeWriteNum uses tags inc, in1, in2, etc.
     40 = CompositeWriteNum[composite(1): Composite, in1(2): Number, in2(3): Number, in3(4): Number, in4(5): Number, in5(6): Number, in6(7): Number, in7(8): Number, in8(9): Number, in9(10): Number, in10(11): Number, in11(12): Number, in12(13): Number, in13(14): Number, in14(15): Number, in15(16): Number, in16(17): Number, in17(18): Number, in18(19): Number, in19(20): Number, in20(21): Number, in21(22): Number, in22(23): Number, in23(24): Number, in24(25): Number, in25(26): Number, in26(27): Number, in27(28): Number, in28(29): Number, in29(30): Number, in30(31): Number, in31(32): Number, in32(33): Number, start(34): Number][out(1): Composite]{
@@ -942,35 +942,35 @@ components! {
         mode: Option<u8>, // None for Off->On, 0 for On->Off, 2 for Always
 
         #[serde(rename = "@p", default, skip_serializing_if = "is_default")]
-        p: Option<String>, // ??
+        __p: Option<String>, // ??
     },
     49 = TimerTON[enable(1): OnOff, duration(2): Number][complete(1): OnOff]{
         #[serde(rename = "@u", default, skip_serializing_if="is_default")]
         units: u8, // TODO: enum: 0 for secs, 1 for ticks
 
         #[serde(rename = "@t", default, skip_serializing_if = "is_default")]
-        t: Option<String>, // ??
+        __t: Option<String>, // ??
     },
     50 = TimerTOF[enable(1): OnOff, duration(2): Number][timing(1): OnOff]{
         #[serde(rename = "@u", default, skip_serializing_if="is_default")]
         units: u8, // TODO: enum: 0 for secs, 1 for ticks
 
         #[serde(rename = "@t", default, skip_serializing_if = "is_default")]
-        t: Option<String>, // ??
+        __t: Option<String>, // ??
     },
     51 = TimerRTO[enable(1): OnOff, duration(2): Number, reset(3): OnOff][complete(1): OnOff]{
         #[serde(rename = "@u", default, skip_serializing_if="is_default")]
         units: u8, // TODO: enum: 0 for secs, 1 for ticks
 
         #[serde(rename = "@t", default, skip_serializing_if = "is_default")]
-        t: Option<String>, // ??
+        __t: Option<String>, // ??
     },
     52 = TimerRTF[enable(1): OnOff, duration(2): Number, reset(3): OnOff][timing(1): OnOff]{
         #[serde(rename = "@u", default, skip_serializing_if="is_default")]
         units: u8, // TODO: enum: 0 for secs, 1 for ticks
 
         #[serde(rename = "@t", default, skip_serializing_if = "is_default")]
-        t: Option<String>, // ??
+        __t: Option<String>, // ??
     },
     53 = CompositeSwitchbox[on(1): Composite, off(2): Composite, switch(3): OnOff][out(1): Composite]{},
     54 = NumToCompositeBin[input(1): Number][out(1): Composite]{},

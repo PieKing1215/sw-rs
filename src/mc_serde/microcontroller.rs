@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, str::FromStr};
+use std::collections::BTreeMap;
 
 use fakemap::FakeMap;
 use serde::{Deserialize, Serialize};
@@ -128,7 +128,7 @@ impl From<PositionXY> for RecursiveStringMap {
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 #[serde(rename = "group")]
-pub struct Group {
+pub(crate) struct Group {
     pub data: Data,
     pub components: Components,
     pub components_bridge: ComponentsBridge,
@@ -148,7 +148,7 @@ pub struct Group {
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 #[serde(rename = "data")]
-pub struct Data {
+pub(crate) struct Data {
     #[serde(rename = "@type", default, skip_serializing_if = "is_default")]
     pub typ: Option<String>, // ??
 
@@ -158,7 +158,7 @@ pub struct Data {
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 #[serde(rename = "components")]
-pub struct Components {
+pub(crate) struct Components {
     #[serde(
         rename = "c",
         default,
@@ -170,7 +170,7 @@ pub struct Components {
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 #[serde(rename = "components_bridge")]
-pub struct ComponentsBridge {
+pub(crate) struct ComponentsBridge {
     #[serde(rename = "c", default)]
     pub components_bridge: Vec<ComponentsBridgeInner>,
 }
@@ -215,27 +215,6 @@ pub struct ComponentsBridgeInnerObject {
     pub other: FakeMap<String, RecursiveStringMap>,
 }
 
-#[derive(Serialize, Deserialize, Default, Debug)]
-pub struct ComponentsBridgeInnerObjectIO {
-    #[serde(
-        rename = "@component_id",
-        default,
-        skip_serializing_if = "Option::is_none",
-        deserialize_with = "de_str_to_opt_parse"
-    )]
-    component_id: Option<u32>,
-}
-
-fn de_str_to_opt_parse<'de, D, T: Deserialize<'de> + FromStr + std::fmt::Debug>(
-    de: D,
-) -> Result<Option<T>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-    <T as FromStr>::Err: std::fmt::Debug,
-{
-    Option::<String>::deserialize(de).map(|m| m.map(|s| s.parse().unwrap()))
-}
-
 /// Serializes Vec into tags with names c0, c1, c2, etc.
 fn ser_component_states<S, T: Serialize>(states: &[T], ser: S) -> Result<S::Ok, S::Error>
 where
@@ -255,6 +234,6 @@ where
 
 #[derive(Serialize, Deserialize, Default)]
 #[serde(rename = "components_bridge")]
-pub struct ComponentBridgeStates {
+pub(crate) struct ComponentBridgeStates {
     pub components_bridge: Vec<ComponentsBridgeInnerObject>,
 }

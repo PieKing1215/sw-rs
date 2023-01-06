@@ -3,7 +3,7 @@ use sw_mc::Microcontroller;
 
 #[test]
 fn test_samples_serde_matches() {
-    for f in std::fs::read_dir("sample").unwrap() {
+    for f in std::fs::read_dir("samples").unwrap() {
         let entry = f.unwrap();
         let fname = entry.file_name().into_string().unwrap();
         if fname.ends_with(".xml") {

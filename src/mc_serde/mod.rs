@@ -4,7 +4,7 @@ use self::microcontroller::{ComponentsBridgeInnerObject, Group, MicrocontrollerS
 
 pub mod microcontroller;
 
-pub fn is_default<T: Default + PartialEq>(t: &T) -> bool {
+pub(crate) fn is_default<T: Default + PartialEq>(t: &T) -> bool {
     *t == Default::default()
 }
 

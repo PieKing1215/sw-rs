@@ -9,7 +9,7 @@ pub fn main() {
     // deserialize
     let mc: Microcontroller = Microcontroller::from_xml_str(&src).unwrap();
 
-    // modify `mc` here
+    // could modify `mc` here
 
     // serialize to String
     let out: String = mc.to_xml_string().unwrap();

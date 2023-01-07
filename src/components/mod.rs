@@ -5,7 +5,8 @@ use std::num::ParseFloatError;
 
 use crate::types::CompileType;
 use crate::util::fakemap_hack::FakeMapExt;
-use crate::{mc_serde::microcontroller::PositionXY, util::serde_utils::RecursiveStringMap};
+use crate::util::serde_utils::PositionXY;
+use crate::util::serde_utils::RecursiveStringMap;
 use fakemap::FakeMap;
 use paste::paste;
 use serde::{Deserialize, Serialize};
@@ -20,13 +21,18 @@ pub struct ComponentIODef {
     pub outputs: Vec<Type>,
 }
 
-fn skip_connection<T: CompileType>(v: &ConnectionV) -> bool {
-    (*v == ConnectionV::default())
-        && (T::get_type() == Type::Number || T::get_type() == Type::OnOff)
+fn skip_connection<T: CompileType, const S: bool>(v: &Option<ConnectionV>) -> bool {
+    match v {
+        Some(v) => {
+            (*v == ConnectionV::default())
+                && (T::get_type() == Type::Number || T::get_type() == Type::OnOff)
+        },
+        None => true,
+    }
 }
 
 /// Represents a connection to another component.
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct ComponentConnection {
     /// The id of the component to connect to.
     #[serde(
@@ -115,8 +121,8 @@ impl core::fmt::Debug for ConnectionV {
 }
 
 /// Represents an input connection slot.
-#[derive(Serialize, Deserialize, Clone, Default)]
-pub struct TypedInputConnection<T: CompileType> {
+#[derive(Serialize, Deserialize, Clone, Default, PartialEq, Eq)]
+pub struct TypedInputConnection<T: CompileType, const S: bool> {
     /// The actual connection.
     #[serde(flatten)]
     pub connection: Option<ComponentConnection>,
@@ -124,13 +130,13 @@ pub struct TypedInputConnection<T: CompileType> {
     // some extra ser/de fields
     #[serde(rename = "@v", default, skip_serializing_if = "is_default")]
     v_attr: Option<String>,
-    #[serde(default, skip_serializing_if = "skip_connection::<T>")]
-    v: ConnectionV,
+    #[serde(default, skip_serializing_if = "skip_connection::<T, S>")]
+    v: Option<ConnectionV>,
     #[serde(skip, default)]
     _phantom: PhantomData<T>,
 }
 
-impl<T: CompileType> core::fmt::Debug for TypedInputConnection<T> {
+impl<T: CompileType, const S: bool> core::fmt::Debug for TypedInputConnection<T, S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TypedInputConnection")
             .field("connection", &self.connection)
@@ -138,14 +144,14 @@ impl<T: CompileType> core::fmt::Debug for TypedInputConnection<T> {
     }
 }
 
-impl<T: CompileType> TypedInputConnection<T> {
+impl<T: CompileType, const S: bool> TypedInputConnection<T, S> {
     /// Creates a [`TypedInputConnection`] with the given connection.
     #[must_use]
     pub fn new(component_id: u32, node_index: u8) -> Self {
         Self {
             connection: Some(ComponentConnection { component_id, node_index }),
             v_attr: None,
-            v: ConnectionV::default(),
+            v: None,
             _phantom: PhantomData,
         }
     }
@@ -156,19 +162,19 @@ impl<T: CompileType> TypedInputConnection<T> {
         Self {
             connection: None,
             v_attr: None,
-            v: ConnectionV::default(),
+            v: None,
             _phantom: PhantomData,
         }
     }
 }
 
 /// Represents an output connection slot.
-#[derive(Serialize, Deserialize, Clone, Default)]
+#[derive(Serialize, Deserialize, Clone, Default, PartialEq, Eq)]
 pub struct TypedOutputConnection<T: CompileType> {
     #[serde(rename = "@v", default, skip_serializing_if = "is_default")]
     v_attr: Option<String>,
-    #[serde(default, skip_serializing_if = "skip_connection::<T>")]
-    v: ConnectionV,
+    #[serde(default, skip_serializing_if = "skip_connection::<T, true>")]
+    v: Option<ConnectionV>,
     #[serde(skip, default)]
     _phantom: PhantomData<T>,
 }
@@ -200,7 +206,34 @@ impl From<_ComponentDe> for Component {
         let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
         let de: Component = quick_xml::de::from_str(ser)
-            .unwrap_or_else(|_| panic!("Deserializing component:\n{db}\n{ser}\n"));
+            .expect(&format!("Deserializing component:\n{db}\n{ser}\n"));
+
+        de
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct _BridgeComponentDe {
+    #[serde(flatten)]
+    inner: FakeMap<String, RecursiveStringMap>,
+}
+
+impl From<_BridgeComponentDe> for BridgeComponent {
+    fn from(de: _BridgeComponentDe) -> Self {
+        #[derive(Serialize, Deserialize, Debug)]
+        struct W {
+            object: _BridgeComponentDe,
+        }
+
+        let db = format!("{de:?}");
+
+        let mut se = quick_xml::se::Serializer::new(String::new());
+        se.escape(quick_xml::se::QuoteLevel::Partial);
+        let ser = W { object: de }.serialize(se).unwrap();
+        let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
+
+        let de: BridgeComponent = quick_xml::de::from_str(ser)
+            .expect(&format!("Deserializing bridge component:\n{db}\n{ser}\n"));
 
         de
     }
@@ -475,37 +508,41 @@ where
 }
 
 macro_rules! components {
-    (
+    (   $type:ident,
         $(
             $id:literal = $x:ident [$($in_id:ident($idx_i:literal): $in:expr),*] [$($out_id:ident($idx_o:literal): $out:expr),*] {$($b:tt)*}
-        ),*
+        ),*,
+        {$($ser_to_map:tt)*}
     ) => {
         paste! {
             #[allow(missing_docs)]
             #[derive(Serialize, Deserialize, Clone, Debug)]
             #[serde(rename = "object", tag = "@type", content = "object")]
-            pub enum Component {
+            pub enum $type {
                 $(
                     #[serde(rename = "" $id "")]
                     $x {
                         #[serde(rename = "@id")]
                         id: u32,
+                        /// The position of the component.
+                        ///
+                        /// Each grid square is 0.25 units.
                         #[serde(default, skip_serializing_if = "is_default")]
                         pos: PositionXY,
                         $(
-                            #[serde(rename = "" [<in $idx_i>] "", default)]
-                            $in_id: TypedInputConnection<crate::types::[<T $in>]>,
+                            #[serde(rename = "" [<in $idx_i>] "", default, skip_serializing_if = "is_default")]
+                            $in_id: Option<TypedInputConnection<crate::types::[<T $in>], true>>,
                         )*
                         $(
-                            #[serde(rename = "" [<out $idx_o>] "")]
-                            $out_id: TypedOutputConnection<crate::types::[<T $out>]>,
+                            #[serde(rename = "" [<out $idx_o>] "", default, skip_serializing_if = "is_default")]
+                            $out_id: Option<TypedOutputConnection<crate::types::[<T $out>]>>,
                         )*
                         $($b)*
                     },
                 )*
             }
 
-            impl Component {
+            impl $type {
                 /// Generates a [`ComponentIODef`] for this [`Component`].
                 #[must_use]
                 pub fn io_def(&self) -> ComponentIODef {
@@ -521,12 +558,12 @@ macro_rules! components {
 
                 /// Returns an immutable list of the input connections for this [`Component`].
                 #[must_use]
-                pub fn inputs(&self) -> Vec<&Option<ComponentConnection>> {
+                pub fn inputs(&self) -> Vec<Option<&ComponentConnection>> {
                     match self {
                         $(
                             Self::$x {
                                 $( $in_id, )* .. } => vec![
-                                $( &$in_id.connection, )*
+                                $( $in_id.as_ref().and_then(|c| c.connection.as_ref()), )*
                             ],
                         )*
                     }
@@ -534,12 +571,12 @@ macro_rules! components {
 
                 /// Returns a mutable list of the input connections for this [`Component`].
                 #[must_use]
-                pub fn inputs_mut(&mut self) -> Vec<&mut Option<ComponentConnection>> {
+                pub fn inputs_mut(&mut self) -> Vec<Option<&mut ComponentConnection>> {
                     match self {
                         $(
                             Self::$x {
                                 $( $in_id, )* .. } => vec![
-                                $( &mut $in_id.connection, )*
+                                $( $in_id.as_mut().and_then(|c| c.connection.as_mut()), )*
                             ],
                         )*
                     }
@@ -575,6 +612,7 @@ macro_rules! components {
                     }
                 }
 
+                #[allow(dead_code)]
                 #[must_use]
                 pub(crate) fn ser_to_map(&self) -> FakeMap<String, RecursiveStringMap> {
                     let mut se = quick_xml::se::Serializer::new(String::new());
@@ -583,62 +621,8 @@ macro_rules! components {
 
                     let mut de: FakeMap<String, RecursiveStringMap> = quick_xml::de::from_str(&ser).unwrap();
 
-                    // see note on NumericalJunction
-                    if matches!(self, Component::NumericalJunction { .. }) {
-                        // FakeMap has no get_mut
-                        if let Some(RecursiveStringMap::Map(mut o)) = de.remove("object") {
-                            o.remove("out2");
-                            o.duplicate_by_key("out1".into(), "__reserved".into());
-                            de.insert("object".into(), RecursiveStringMap::Map(o));
-                        }
-                    }
-
-
-                    // map in1,in2,in3,etc. to inc,in1,in2,etc.
-                    // see note on CompositeWriteNum/CompositeWriteOnOff
-                    if let Component::CompositeWriteNum { count, offset, .. } | Component::CompositeWriteOnOff { count, offset, .. } = self {
-                        if let Some(RecursiveStringMap::Map(mut o)) = de.remove("object") {
-                            for (k, _) in o.iter_mut() {
-                                if *k == "in1" {
-                                    *k = "inc".into();
-                                } else if *k == "in34" {
-                                    *k = "inoff".into();
-                                } else if k.starts_with("in") {
-                                    if let Ok(n) = k.trim_start_matches("in").parse::<u8>() {
-                                        *k = format!("in{}", n - 1);
-                                    }
-                                }
-                            }
-
-                            if *offset != -1 {
-                                o.remove("inoff");
-                            }
-
-                            for i in 1..=32 {
-                                if i > *count {
-                                    let l = format!("in{}", i);
-                                    o.remove(&l);
-                                }
-                            }
-
-                            de.insert("object".into(), RecursiveStringMap::Map(o));
-                        }
-                    }
-
-                    // remove in2 if channel is constant
-                    if let Component::CompositeReadNum { channel, .. } | Component::CompositeReadOnOff { channel, .. } = self {
-                        if let Some(RecursiveStringMap::Map(mut o)) = de.remove("object") {
-                            if *channel != -1 {
-                                o.remove("in2");
-                            } else {
-                                // for some reason, in these nodes in2 is supposed to go after out1
-                                let in2 = o.remove("in2").unwrap();
-                                o.insert("in2".into(), in2);
-                            }
-
-                            de.insert("object".into(), RecursiveStringMap::Map(o));
-                        }
-                    }
+                    #[allow(clippy::redundant_closure_call)]
+                    ($($ser_to_map)*)(&self, &mut de);
 
                     de
                 }
@@ -760,7 +744,7 @@ str_def_fns!("on");
 str_def_fns!("off");
 str_def_fns!("number");
 
-components! {
+components! { Component,
     0 = NOT[input(1): OnOff][out(1): OnOff]{},
     1 = AND[input_a(1): OnOff, input_b(2): OnOff][out(1): OnOff]{},
     2 = OR[input_a(1): OnOff, input_b(2): OnOff][out(1): OnOff]{},
@@ -820,7 +804,7 @@ components! {
         #[serde(with = "dropdown_items")]
         items: Vec<DropdownItem>,
     },
-    // NOTE: due to a bug(?) in the game, both outputs for NumbericalJunctions use the tag "out1" in the XML
+    // NOTE: due to a bug(?) in the game, both outputs for NumericalJunctions use the tag "out1" in the XML
     21 = NumericalJunction[pass(1): Number, switch(2): OnOff][on_path(1): Number, off_path(2): Number]{},
     22 = NumericalSwitchbox[on(1): Number, off(2): Number, switch(3): OnOff][out(1): Number]{},
     23 = PIDController[setpoint(1): Number, process_var(2): Number, active(3): OnOff][out(1): Number]{
@@ -1030,5 +1014,181 @@ components! {
         #[serde(rename = "@v", default, skip_serializing_if="is_default")]
         val: String,
     },
-    59 = AudioSwitchbox[on(1): Audio, off(2): Audio, switch(3): OnOff][out(1): Audio]{}
+    59 = AudioSwitchbox[on(1): Audio, off(2): Audio, switch(3): OnOff][out(1): Audio]{},
+    {
+        |c: &Component, de: &mut FakeMap<String, RecursiveStringMap>| {
+            // see note on NumericalJunction
+            if matches!(c, Component::NumericalJunction { .. }) {
+                // FakeMap has no get_mut
+                if let Some(RecursiveStringMap::Map(mut o)) = de.remove("object") {
+                    o.remove("out2");
+                    o.duplicate_by_key("out1".into(), "__reserved".into());
+                    de.insert("object".into(), RecursiveStringMap::Map(o));
+                }
+            }
+
+
+            // map in1,in2,in3,etc. to inc,in1,in2,etc.
+            // see note on CompositeWriteNum/CompositeWriteOnOff
+            if let Component::CompositeWriteNum { count, offset, .. } | Component::CompositeWriteOnOff { count, offset, .. } = c {
+                if let Some(RecursiveStringMap::Map(mut o)) = de.remove("object") {
+                    for (k, _) in o.iter_mut() {
+                        if *k == "in1" {
+                            *k = "inc".into();
+                        } else if *k == "in34" {
+                            *k = "inoff".into();
+                        } else if k.starts_with("in") {
+                            if let Ok(n) = k.trim_start_matches("in").parse::<u8>() {
+                                *k = format!("in{}", n - 1);
+                            }
+                        }
+                    }
+
+                    if *offset != -1 {
+                        o.remove("inoff");
+                    }
+
+                    for i in 1..=32 {
+                        if i > *count {
+                            let l = format!("in{}", i);
+                            o.remove(&l);
+                        }
+                    }
+
+                    de.insert("object".into(), RecursiveStringMap::Map(o));
+                }
+            }
+
+            // remove in2 if channel is constant
+            if let Component::CompositeReadNum { channel, .. } | Component::CompositeReadOnOff { channel, .. } = c {
+                if let Some(RecursiveStringMap::Map(mut o)) = de.remove("object") {
+                    if *channel == -1 {
+                        // for some reason, in these nodes in2 is supposed to go after out1
+                        let in2 = o.remove("in2").unwrap();
+                        o.insert("in2".into(), in2);
+                    } else {
+                        o.remove("in2");
+                    }
+
+                    de.insert("object".into(), RecursiveStringMap::Map(o));
+                }
+            }
+        }
+    }
+}
+
+components! { BridgeComponent,
+    0 = OnOffIn[][]{
+        #[serde(rename = "in1", default, skip_serializing_if = "is_default")]
+        unused_input: Option<TypedInputConnection<crate::types::TOnOff, false>>,
+        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
+        output: Option<TypedOutputConnection<crate::types::TOnOff>>,
+    },
+    1 = OnOffOut[][]{
+        #[serde(rename = "in1", default)]
+        input: TypedInputConnection<crate::types::TOnOff, false>,
+        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
+        unused_output: Option<TypedOutputConnection<crate::types::TOnOff>>,
+    },
+    2 = NumberIn[][]{
+        #[serde(rename = "in1", default, skip_serializing_if = "is_default")]
+        unused_input: Option<TypedInputConnection<crate::types::TNumber, false>>,
+        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
+        output: Option<TypedOutputConnection<crate::types::TNumber>>,
+    },
+    3 = NumberOut[][]{
+        #[serde(rename = "in1", default)]
+        input: TypedInputConnection<crate::types::TNumber, false>,
+        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
+        unused_output: Option<TypedOutputConnection<crate::types::TNumber>>,
+    },
+    4 = CompositeIn[][]{
+        #[serde(rename = "in1", default, skip_serializing_if = "is_default")]
+        unused_input: Option<TypedInputConnection<crate::types::TComposite, true>>,
+        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
+        output: Option<TypedOutputConnection<crate::types::TComposite>>,
+    },
+    5 = CompositeOut[][]{
+        #[serde(rename = "in1", default)]
+        input: TypedInputConnection<crate::types::TComposite, true>,
+        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
+        unused_output: Option<TypedOutputConnection<crate::types::TComposite>>,
+    },
+    6 = VideoIn[][]{
+        #[serde(rename = "in1", default, skip_serializing_if = "is_default")]
+        unused_input: Option<TypedInputConnection<crate::types::TVideo, true>>,
+        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
+        output: Option<TypedOutputConnection<crate::types::TVideo>>,
+    },
+    7 = VideoOut[][]{
+        #[serde(rename = "in1", default)]
+        input: TypedInputConnection<crate::types::TVideo, true>,
+        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
+        unused_output: Option<TypedOutputConnection<crate::types::TVideo>>,
+    },
+    8 = AudioIn[][]{
+        #[serde(rename = "in1", default, skip_serializing_if = "is_default")]
+        unused_input: Option<TypedInputConnection<crate::types::TAudio, true>>,
+        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
+        output: Option<TypedOutputConnection<crate::types::TAudio>>,
+    },
+    9 = AudioOut[][]{
+        #[serde(rename = "in1", default)]
+        input: TypedInputConnection<crate::types::TAudio, true>,
+        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
+        unused_output: Option<TypedOutputConnection<crate::types::TAudio>>,
+    },
+    {
+        |_c: &BridgeComponent, _de: &mut FakeMap<String, RecursiveStringMap>| {}
+    }
+}
+
+pub(crate) fn bridge_components_deserialize<'de, D>(de: D) -> Result<Vec<BridgeComponent>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let de = Vec::<_BridgeComponentDe>::deserialize(de)?;
+    // println!("{de:?}");
+    let cs = de
+        .into_iter()
+        .map(|mut cde| {
+            if cde.inner.get("@type").is_none() {
+                cde.inner
+                    .insert("@type".into(), RecursiveStringMap::String("0".into()));
+            }
+
+            cde.into()
+        })
+        .collect();
+
+    Ok(cs)
+}
+
+pub(crate) fn bridge_components_serialize<S>(
+    components: &[BridgeComponent],
+    ser: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    let cdes = components
+        .iter()
+        .map(|c| {
+            let mut se = quick_xml::se::Serializer::new(String::new());
+            se.escape(quick_xml::se::QuoteLevel::Partial);
+            let ser = c.serialize(se).unwrap();
+            let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
+
+            let mut cde: _ComponentDe = quick_xml::de::from_str(ser).unwrap();
+            if let Some(RecursiveStringMap::String(s)) = cde.inner.get("@type").cloned() {
+                if s == "0" {
+                    cde.inner.remove("@type");
+                }
+            }
+
+            cde
+        })
+        .collect::<Vec<_>>();
+
+    ser.collect_seq(cdes.iter())
 }

@@ -2,6 +2,7 @@
 
 #![forbid(unsafe_code)]
 #![warn(clippy::pedantic)]
+#![allow(clippy::expect_fun_call)]
 #![warn(missing_docs)]
 
 pub mod components;
@@ -9,9 +10,11 @@ pub mod mc_serde;
 pub mod types;
 pub mod util;
 
-use components::Component;
-use mc_serde::microcontroller::{ComponentsBridgeInner, MicrocontrollerSerDe, Nodes};
+use components::{BridgeComponent, Component};
+use mc_serde::microcontroller::{IONodeType, MicrocontrollerSerDe};
 use serde::{Deserialize, Serialize};
+use types::Type;
+use util::serde_utils::PositionXY;
 
 /// High level representation of a microcontroller.
 ///
@@ -19,22 +22,24 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(from = "MicrocontrollerSerDe", into = "MicrocontrollerSerDe")]
 pub struct Microcontroller {
-    /// The name of the microcontroller
+    /// The name of the microcontroller.
     pub name: String,
-    /// The description of the microcontroller
+    /// The description of the microcontroller.
     ///
     /// Default is `"No description set."`
     pub description: String,
-    /// The width of the microcontroller
+    /// The width of the microcontroller.
     ///
-    /// Can be `1..=6` Default is `2`
+    /// Can be `1..=6` Default is `2`.
     pub width: u8,
-    /// The width of the microcontroller
+    /// The width of the microcontroller.
     ///
-    /// Can be `1..=6` Default is `2`
+    /// Can be `1..=6` Default is `2`.
     pub length: u8,
 
+    /// The highest id currently used.
     id_counter: u32,
+    /// The highest node(IO) id currently used.
     id_counter_node: Option<u32>,
 
     /// 16x16 binary microcontroller icon.
@@ -42,17 +47,17 @@ pub struct Microcontroller {
 
     data_type: Option<String>,
 
-    /// Definition of IO nodes
+    /// Definition of IO nodes.
     ///
-    /// Subject to change
-    pub nodes: Nodes, // TODO: make non-serde type
+    /// Subject to change.
+    pub io: Vec<IONode>,
+    /// Vec of component_id.
+    ///
+    /// Needed because the order of components isn't necessarily the same as the order of IO nodes.
+    components_bridge_order: Vec<u32>,
 
-    /// The main components (IO nodes are in [`components_bridge`][`Self::components_bridge`])
+    /// The main components (IO nodes are in [`io`][`Self::io`]).
     pub components: Vec<Component>,
-    /// The IO node components
-    ///
-    /// Subject to change
-    pub components_bridge: Vec<ComponentsBridgeInner>, // TODO: make non-serde type
 }
 
 impl Microcontroller {
@@ -82,13 +87,13 @@ impl Microcontroller {
             description,
             width,
             length,
-            nodes: Nodes::default(),
+            io: Vec::new(),
             id_counter: 0,
             id_counter_node: None,
             icon: [0; 16],
             data_type: None,
             components: Vec::new(),
-            components_bridge: Vec::new(),
+            components_bridge_order: Vec::new(),
         }
     }
 }
@@ -102,4 +107,37 @@ impl Default for Microcontroller {
             2,
         )
     }
+}
+
+/// Represents an input or output for this microcontroller.
+#[derive(Clone, Debug)]
+pub struct IONode {
+    /// Design/schematic part of the node
+    pub design: IONodeDesign,
+    /// Logic part of the node
+    pub logic: BridgeComponent,
+}
+
+/// Design/schematic part of an [`IONode`]
+#[derive(Clone, Debug)]
+pub struct IONodeDesign {
+    /// Unique id number for this node.
+    node_id: u32,
+
+    /// The name of the node.
+    ///
+    /// Default is `"Input"`
+    pub label: String,
+    /// The description of the node.
+    ///
+    /// Default is `"The input signal to be processed."`.
+    pub description: String,
+    /// The data type for this node
+    pub typ: Type,
+    /// The mode for this node ([`Input`][`IONodeType::Input`] or [`Output`][`IONodeType::Output`]).
+    pub mode: IONodeType,
+    /// Position in the design/schematic section.
+    ///
+    /// 0,0 is bottom left.
+    pub position: PositionXY,
 }

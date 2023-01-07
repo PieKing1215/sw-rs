@@ -1,20 +1,31 @@
 //! Module containing things related to the game's types
 
 use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
 /// An enum representing the types of data available in the game.
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Serialize_repr, Deserialize_repr, Clone, Copy, PartialEq, Eq, Debug, Default)]
+#[repr(u8)]
 pub enum Type {
     /// On/Off (bool) value.
-    OnOff,
+    #[default]
+    OnOff = 0,
     /// Number (float) value.
-    Number,
+    Number = 1,
+    /// This type is not normally available ingame and may cause issues.
+    _Power = 2,
+    /// This type is not normally available ingame and may cause issues.
+    _Fluid = 3,
+    /// This type is not normally available ingame and may cause issues.
+    _Electric = 4,
     /// Composite value.
-    Composite,
+    Composite = 5,
     /// Video value.
-    Video,
+    Video = 6,
     /// Audio value.
-    Audio,
+    Audio = 7,
+    /// This type is not normally available ingame and may cause issues.
+    _Rope = 8,
 }
 
 /// Trait that represents a [`Type`] at compile-time.
@@ -28,7 +39,7 @@ pub trait CompileType {
 }
 
 /// [`CompileType`] for [`Type::Number`].
-#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, Eq)]
 pub struct TNumber;
 
 impl CompileType for TNumber {
@@ -38,7 +49,7 @@ impl CompileType for TNumber {
 }
 
 /// [`CompileType`] for [`Type::OnOff`].
-#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, Eq)]
 pub struct TOnOff;
 
 impl CompileType for TOnOff {
@@ -48,7 +59,7 @@ impl CompileType for TOnOff {
 }
 
 /// [`CompileType`] for [`Type::Composite`].
-#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, Eq)]
 pub struct TComposite;
 
 impl CompileType for TComposite {
@@ -58,7 +69,7 @@ impl CompileType for TComposite {
 }
 
 /// [`CompileType`] for [`Type::Video`].
-#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, Eq)]
 pub struct TVideo;
 
 impl CompileType for TVideo {
@@ -68,7 +79,7 @@ impl CompileType for TVideo {
 }
 
 /// [`CompileType`] for [`Type::Audio`].
-#[derive(Serialize, Deserialize, Clone, Default, Debug)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, Eq)]
 pub struct TAudio;
 
 impl CompileType for TAudio {

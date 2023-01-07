@@ -11,12 +11,14 @@ fn test_samples_serde_matches() {
             println!("CHECKING {fname}...");
             let src = std::fs::read_to_string(entry.path()).unwrap();
 
+            #[allow(clippy::expect_fun_call)]
             let mc: Microcontroller = Microcontroller::from_xml_str(&src)
-                .unwrap_or_else(|_| panic!("Failed to deserialize {fname}"));
+                .expect(&format!("Failed to deserialize {fname}"));
 
+            #[allow(clippy::expect_fun_call)]
             let out = mc
                 .to_xml_string()
-                .unwrap_or_else(|_| panic!("Failed to serialize {fname}"));
+                .expect(&format!("Failed to serialize {fname}"));
 
             assert_str_eq!(src, out, "{fname}:\n{mc:#?}");
         }
@@ -36,12 +38,14 @@ fn test_sw_dir_serde_matches() {
                 println!("CHECKING {fname}...");
                 let src = std::fs::read_to_string(entry.path()).unwrap();
 
+                #[allow(clippy::expect_fun_call)]
                 let mc: Microcontroller = Microcontroller::from_xml_str(&src)
-                    .unwrap_or_else(|_| panic!("Failed to deserialize {fname}"));
+                    .expect(&format!("Failed to deserialize {fname}"));
 
+                #[allow(clippy::expect_fun_call)]
                 let out = mc
                     .to_xml_string()
-                    .unwrap_or_else(|_| panic!("Failed to serialize {fname}"));
+                    .expect(&format!("Failed to serialize {fname}"));
 
                 assert_str_eq!(src, out, "{fname}:\n{mc:#?}");
             }

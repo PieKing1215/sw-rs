@@ -4,8 +4,13 @@ use std::collections::BTreeMap;
 
 use fakemap::FakeMap;
 use serde::{Deserialize, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use crate::{components::Component, util::serde_utils::RecursiveStringMap};
+use crate::{
+    components::{BridgeComponent, Component},
+    types::Type,
+    util::serde_utils::{PositionXZ, RecursiveStringMap},
+};
 
 use super::is_default;
 
@@ -69,14 +74,14 @@ pub(crate) struct MicrocontrollerSerDe {
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 #[serde(rename = "nodes")]
-pub struct Nodes {
+pub(crate) struct Nodes {
     #[serde(rename = "n", default)]
-    pub nodes: Vec<IONode>,
+    pub nodes: Vec<IONodeSerDe>,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 #[serde(rename = "n")]
-pub struct IONode {
+pub(crate) struct IONodeSerDe {
     #[serde(rename = "@id")]
     pub id: u32,
     #[serde(rename = "@component_id")]
@@ -85,53 +90,30 @@ pub struct IONode {
     pub node: IONodeInner,
 }
 
+/// [`Input`][`IONodeType::Input`] or [`Output`][`IONodeType::Output`]
+#[derive(Serialize_repr, Deserialize_repr, Default, Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u8)]
+#[allow(missing_docs)]
+pub enum IONodeType {
+    #[default]
+    Output,
+    Input,
+}
+
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 #[serde(rename = "node")]
-pub struct IONodeInner {
+pub(crate) struct IONodeInner {
     #[serde(rename = "@label")]
     pub label: String,
     #[serde(rename = "@mode", default, skip_serializing_if = "is_default")]
-    pub mode: u8, // 1 = input, 0 = output
+    pub mode: IONodeType, // 1 = input, 0 = output
     #[serde(rename = "@type", default, skip_serializing_if = "is_default")]
-    pub typ: u8, // on/off, number, composite, video, audio
+    pub typ: Type, // on/off, number, composite, video, audio
     #[serde(rename = "@description")]
     pub description: String,
 
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub position: Option<PositionXZ>,
-}
-
-/// A 2D f32 position that (de)serializes to/from "x" and "y".
-#[derive(Serialize, Deserialize, Default, PartialEq, Clone, Debug)]
-#[serde(rename = "node")]
-pub struct PositionXY {
-    /// X position.
-    #[serde(rename = "@x", default, skip_serializing_if = "is_default")]
-    pub x: f32,
-    /// Y position.
-    #[serde(rename = "@y", default, skip_serializing_if = "is_default")]
-    pub y: f32,
-}
-
-/// A 2D f32 position that (de)serializes to/from "x" and "z".
-#[derive(Serialize, Deserialize, Default, PartialEq, Clone, Debug)]
-#[serde(rename = "node")]
-pub struct PositionXZ {
-    /// X position.
-    #[serde(rename = "@x", default, skip_serializing_if = "is_default")]
-    pub x: f32,
-    /// Z position.
-    #[serde(rename = "@z", default, skip_serializing_if = "is_default")]
-    pub z: f32,
-}
-
-impl From<PositionXY> for RecursiveStringMap {
-    fn from(val: PositionXY) -> Self {
-        let mut m = FakeMap::new();
-        m.insert("@x".into(), RecursiveStringMap::String(val.x.to_string()));
-        m.insert("@y".into(), RecursiveStringMap::String(val.y.to_string()));
-        RecursiveStringMap::Map(m)
-    }
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub position: PositionXZ,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug)]
@@ -179,20 +161,33 @@ pub(crate) struct Components {
 #[derive(Serialize, Deserialize, Default, Debug)]
 #[serde(rename = "components_bridge")]
 pub(crate) struct ComponentsBridge {
-    #[serde(rename = "c", default)]
-    pub components_bridge: Vec<ComponentsBridgeInner>,
+    #[serde(
+        rename = "c",
+        default,
+        deserialize_with = "crate::components::bridge_components_deserialize",
+        serialize_with = "crate::components::bridge_components_serialize"
+    )]
+    pub components_bridge: Vec<BridgeComponent>,
+}
+
+#[derive(Serialize_repr, Deserialize_repr, Default, Clone, Copy, PartialEq, Eq, Debug)]
+#[repr(u8)]
+pub(crate) enum ComponentsBridgeType {
+    #[default]
+    OnOffIn,
+    OnOffOut,
+    NumberIn,
+    NumberOut,
+    CompositeIn,
+    CompositeOut,
+    VideoIn,
+    VideoOut,
+    AudioIn,
+    AudioOut,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct ComponentsBridgeInner {
-    #[serde(rename = "@type", default, skip_serializing_if = "is_default")]
-    pub typ: u8,
-
-    pub object: ComponentsBridgeInnerObject,
-}
-
-#[derive(Serialize, Deserialize, Default, Clone, Debug)]
-pub struct ComponentsBridgeInnerObject {
+pub(crate) struct ComponentsBridgeInnerObject {
     #[serde(rename = "@id", default, skip_serializing_if = "is_default")]
     pub id: u32,
 

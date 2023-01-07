@@ -1,8 +1,10 @@
 //! Module containing ser/de code for microcontrollers
 
-use crate::Microcontroller;
+use crate::{components::BridgeComponent, IONode, IONodeDesign, Microcontroller};
 
-use self::microcontroller::{ComponentsBridgeInnerObject, Group, MicrocontrollerSerDe};
+use self::microcontroller::{
+    ComponentsBridgeInnerObject, Group, IONodeInner, IONodeSerDe, MicrocontrollerSerDe,
+};
 
 pub mod microcontroller;
 
@@ -37,7 +39,23 @@ impl From<Microcontroller> for MicrocontrollerSerDe {
             sym13: mc.icon[13],
             sym14: mc.icon[14],
             sym15: mc.icon[15],
-            nodes: mc.nodes,
+            nodes: microcontroller::Nodes {
+                nodes: mc
+                    .io
+                    .iter()
+                    .map(|io| IONodeSerDe {
+                        id: io.design.node_id,
+                        component_id: io.logic.id(),
+                        node: IONodeInner {
+                            label: io.design.label.clone(),
+                            mode: io.design.mode,
+                            typ: io.design.typ,
+                            description: io.design.description.clone(),
+                            position: io.design.position.clone().into(),
+                        },
+                    })
+                    .collect(),
+            },
             group: Group {
                 data: microcontroller::Data { typ: mc.data_type, inputs: (), outputs: () },
                 groups: (),
@@ -54,14 +72,45 @@ impl From<Microcontroller> for MicrocontrollerSerDe {
                         },
                     })
                     .collect(),
-                component_bridge_states: mc
-                    .components_bridge
-                    .iter()
-                    .map(|cb| cb.object.clone())
-                    .collect(),
+                component_bridge_states: {
+                    let mut v: Vec<_> = mc
+                        .io
+                        .iter()
+                        .map(|ion| &ion.logic)
+                        .map(|c| ComponentsBridgeInnerObject {
+                            id: c.id(),
+                            other: {
+                                let mut m =
+                                    c.ser_to_map().remove("object").unwrap().into_map().unwrap();
+                                m.remove("@id");
+                                m
+                            },
+                        })
+                        .collect();
+
+                    v.sort_by_key(|c| {
+                        mc.components_bridge_order
+                            .iter()
+                            .position(|id| *id == c.id)
+                            .unwrap()
+                    });
+
+                    v
+                },
                 components: microcontroller::Components { components: mc.components },
                 components_bridge: microcontroller::ComponentsBridge {
-                    components_bridge: mc.components_bridge,
+                    components_bridge: {
+                        let mut v: Vec<_> = mc.io.into_iter().map(|ion| ion.logic).collect();
+
+                        v.sort_by_key(|c| {
+                            mc.components_bridge_order
+                                .iter()
+                                .position(|id| *id == c.id())
+                                .unwrap()
+                        });
+
+                        v
+                    },
                 },
                 group_states: (),
             },
@@ -70,7 +119,7 @@ impl From<Microcontroller> for MicrocontrollerSerDe {
 }
 
 impl From<MicrocontrollerSerDe> for Microcontroller {
-    fn from(sd: MicrocontrollerSerDe) -> Self {
+    fn from(mut sd: MicrocontrollerSerDe) -> Self {
         Self {
             name: sd.name,
             description: sd.description,
@@ -84,9 +133,48 @@ impl From<MicrocontrollerSerDe> for Microcontroller {
             ],
             data_type: sd.group.data.typ,
 
-            nodes: sd.nodes,
+            components_bridge_order: sd
+                .group
+                .components_bridge
+                .components_bridge
+                .iter()
+                .map(BridgeComponent::id)
+                .collect(),
+            io: sd
+                .nodes
+                .nodes
+                .into_iter()
+                .map(|n| {
+                    let c_idx = sd
+                        .group
+                        .components_bridge
+                        .components_bridge
+                        .iter()
+                        .position(|c| c.id() == n.component_id)
+                        .expect(&format!(
+                            "Couldn't find node {}'s component with id {}",
+                            n.id, n.component_id
+                        ));
+                    let c = sd.group.components_bridge.components_bridge.remove(c_idx);
+                    assert_eq!(
+                        n.component_id,
+                        c.id(),
+                        "Node's component_id didn't match component's id"
+                    );
+                    IONode {
+                        design: IONodeDesign {
+                            node_id: n.id,
+                            label: n.node.label.clone(),
+                            mode: n.node.mode,
+                            typ: n.node.typ,
+                            description: n.node.description.clone(),
+                            position: n.node.position.into(),
+                        },
+                        logic: c,
+                    }
+                })
+                .collect(),
             components: sd.group.components.components,
-            components_bridge: sd.group.components_bridge.components_bridge,
         }
     }
 }

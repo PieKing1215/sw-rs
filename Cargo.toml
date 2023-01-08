@@ -6,18 +6,14 @@ edition = "2021"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_repr = "0.1"
-quick-xml = { version = "0.27", features = ["serialize"] }
+# adds quote level setting, allows attribute names to start with numbers, uses single quotes for attributes containing double quotes
+# see https://github.com/tafia/quick-xml/issues/362
+quick-xml = { git = "https://github.com/PieKing1215/quick-xml", features = ["serialize"] }
 paste = "1.0"
-fakemap = "0.2"
+# removes duplicate check on insert
+fakemap = { git = "https://github.com/PieKing1215/fakemap_dup" }
 dirs = "4.0"
 thiserror = "1.0"
 
 [dev-dependencies]
 pretty_assertions = "1.3"
-
-[patch.crates-io]
-# adds quote level setting, allows attribute names to start with numbers, uses single quotes for attributes containing double quotes
-# see https://github.com/tafia/quick-xml/issues/362
-quick-xml = { git = "https://github.com/PieKing1215/quick-xml" }
-# removes duplicate check on insert
-fakemap = { git = "https://github.com/PieKing1215/fakemap_dup" }

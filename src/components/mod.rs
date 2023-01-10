@@ -405,13 +405,6 @@ macro_rules! components {
                 $(
                     #[serde(rename = "" $id "")]
                     $x {
-                        // #[serde(rename = "@id")]
-                        // id: u32,
-                        /// The position of the component.
-                        ///
-                        /// Each grid square is 0.25 units.
-                        #[serde(default, skip_serializing_if = "is_default")]
-                        pos: PositionXY,
                         $(
                             #[serde(rename = "" [<in $idx_i>] "", default, skip_serializing_if = "is_default")]
                             $in_id: Option<TypedInputConnection<crate::types::[<T $in>], true>>,
@@ -461,26 +454,6 @@ macro_rules! components {
                                 $( $in_id, )* .. } => vec![
                                 $( $in_id.as_mut().and_then(|c| c.connection.as_mut()), )*
                             ],
-                        )*
-                    }
-                }
-
-                /// Immutably borrows the position of this [`ComponentType`].
-                #[must_use]
-                pub fn position(&self) -> &PositionXY {
-                    match self {
-                        $(
-                            Self::$x { pos, .. } => pos,
-                        )*
-                    }
-                }
-
-                /// Mutably borrows the position of this [`ComponentType`].
-                #[must_use]
-                pub fn position_mut(&mut self) -> &mut PositionXY {
-                    match self {
-                        $(
-                            Self::$x { pos, .. } => pos,
                         )*
                     }
                 }
@@ -1084,6 +1057,12 @@ where
 pub struct Component {
     #[serde(rename = "@id")]
     pub(crate) id: u32,
+    /// The position of the component.
+    ///
+    /// Each grid square is 0.25 units.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub pos: PositionXY,
+
     /// The [`ComponentType`].
     #[serde(flatten)]
     pub component: ComponentType,
@@ -1108,6 +1087,9 @@ impl Component {
             "@id".into(),
             RecursiveStringMap::String(self.id.to_string()),
         );
+        if !is_default(&self.pos) {
+            m.insert_idx(1, "pos".into(), self.pos.clone().into());
+        }
 
         m
     }
@@ -1128,9 +1110,11 @@ impl From<_ComponentDe> for Component {
 
         #[derive(Serialize, Deserialize, Clone, Debug)]
         #[serde(rename = "c")]
-        struct _RawComponentWithId {
+        struct _RawComponent {
             #[serde(rename = "@id")]
             pub id: u32,
+            #[serde(default, skip_serializing_if = "is_default")]
+            pub pos: PositionXY,
             #[serde(flatten)]
             pub component: Box<ComponentType>,
         }
@@ -1139,6 +1123,10 @@ impl From<_ComponentDe> for Component {
             // println!("{o:?}");
             de.inner
                 .insert_idx(0, "@id".into(), o.remove("@id").unwrap());
+
+            if let Some(pos) = o.remove("pos") {
+                de.inner.insert_idx(1, "pos".into(), pos);
+            }
 
             de.inner.insert("object".into(), RecursiveStringMap::Map(o));
         }
@@ -1152,12 +1140,12 @@ impl From<_ComponentDe> for Component {
         let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
         // println!("se {ser} {}", size_of::<_RawComponentWithId>());
-        let de: _RawComponentWithId = quick_xml::de::from_str(ser)
+        let de: _RawComponent = quick_xml::de::from_str(ser)
             .expect(&format!("Deserializing component:\n{db}\n{ser}\n"));
 
         // println!("don {de:?}");
 
-        Component { id: de.id, component: *de.component }
+        Component { id: de.id, pos: de.pos, component: *de.component }
     }
 }
 
@@ -1167,6 +1155,9 @@ impl From<Component> for _ComponentDe {
 
         if let Some(RecursiveStringMap::Map(mut o)) = m.remove("object") {
             o.insert_idx(0, "@id".into(), m.remove("@id").unwrap());
+            if let Some(pos) = m.remove("pos") {
+                o.insert_idx(1, "pos".into(), pos);
+            }
 
             m.insert("object".into(), RecursiveStringMap::Map(o));
         }
@@ -1183,6 +1174,12 @@ impl From<Component> for _ComponentDe {
 pub struct BridgeComponent {
     #[serde(rename = "@id")]
     pub(crate) id: u32,
+    /// The position of the component.
+    ///
+    /// Each grid square is 0.25 units.
+    #[serde(default, skip_serializing_if = "is_default")]
+    pub pos: PositionXY,
+
     /// The [`BridgeComponentType`].
     #[serde(flatten)]
     pub component: BridgeComponentType,
@@ -1207,6 +1204,9 @@ impl BridgeComponent {
             "@id".into(),
             RecursiveStringMap::String(self.id.to_string()),
         );
+        if !is_default(&self.pos) {
+            m.insert_idx(1, "pos".into(), self.pos.clone().into());
+        }
 
         m
     }
@@ -1226,17 +1226,22 @@ impl From<_BridgeComponentDe> for BridgeComponent {
         }
 
         #[derive(Serialize, Deserialize, Clone, Debug)]
-        struct _RawBridgeComponentWithId {
+        struct _RawBridgeComponent {
             #[serde(rename = "@id")]
             pub id: u32,
+            #[serde(default, skip_serializing_if = "is_default")]
+            pub pos: PositionXY,
             #[serde(flatten)]
             pub component: BridgeComponentType,
         }
 
         if let Some(RecursiveStringMap::Map(mut o)) = de.inner.remove("object") {
-            // println!("{o:?}");
             de.inner
                 .insert_idx(0, "@id".into(), o.remove("@id").unwrap());
+
+            if let Some(pos) = o.remove("pos") {
+                de.inner.insert_idx(1, "pos".into(), pos);
+            }
 
             de.inner.insert("object".into(), RecursiveStringMap::Map(o));
         }
@@ -1248,10 +1253,10 @@ impl From<_BridgeComponentDe> for BridgeComponent {
         let ser = W { object: de }.serialize(se).unwrap();
         let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
-        let de: _RawBridgeComponentWithId = quick_xml::de::from_str(ser)
+        let de: _RawBridgeComponent = quick_xml::de::from_str(ser)
             .expect(&format!("Deserializing component:\n{db}\n{ser}\n"));
 
-        BridgeComponent { id: de.id, component: de.component }
+        BridgeComponent { id: de.id, pos: de.pos, component: de.component }
     }
 }
 
@@ -1261,6 +1266,9 @@ impl From<BridgeComponent> for _BridgeComponentDe {
 
         if let Some(RecursiveStringMap::Map(mut o)) = m.remove("object") {
             o.insert_idx(0, "@id".into(), m.remove("@id").unwrap());
+            if let Some(pos) = m.remove("pos") {
+                o.insert_idx(1, "pos".into(), pos);
+            }
 
             m.insert("object".into(), RecursiveStringMap::Map(o));
         }

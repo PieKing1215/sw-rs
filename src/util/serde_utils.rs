@@ -77,8 +77,12 @@ impl From<PositionXY> for PositionXZ {
 impl From<PositionXY> for RecursiveStringMap {
     fn from(val: PositionXY) -> Self {
         let mut m = FakeMap::new();
-        m.insert("@x".into(), RecursiveStringMap::String(val.x.to_string()));
-        m.insert("@y".into(), RecursiveStringMap::String(val.y.to_string()));
+        if val.x != 0.0 {
+            m.insert("@x".into(), RecursiveStringMap::String(val.x.to_string()));
+        }
+        if val.y != 0.0 {
+            m.insert("@y".into(), RecursiveStringMap::String(val.y.to_string()));
+        }
         RecursiveStringMap::Map(m)
     }
 }

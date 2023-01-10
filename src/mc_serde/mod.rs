@@ -15,6 +15,7 @@ pub(crate) fn is_default<T: Default + PartialEq>(t: &T) -> bool {
 // conversion stuff for MicrocontrollerSerDe <-> Microcontroller:
 
 impl From<Microcontroller> for MicrocontrollerSerDe {
+    #[allow(clippy::too_many_lines)]
     fn from(mc: Microcontroller) -> Self {
         MicrocontrollerSerDe {
             name: mc.name,
@@ -65,10 +66,13 @@ impl From<Microcontroller> for MicrocontrollerSerDe {
                     .map(|c| ComponentsBridgeInnerObject {
                         id: c.id,
                         other: {
-                            let mut m =
-                                c.ser_to_map().remove("object").unwrap().into_map().unwrap();
-                            m.remove("@id");
-                            m
+                            let mut m = c.ser_to_map();
+                            let mut o = m.remove("object").unwrap().into_map().unwrap();
+                            if let Some(pos) = m.remove("pos") {
+                                o.insert_idx(0, "pos".into(), pos);
+                            }
+                            o.remove("@id");
+                            o
                         },
                     })
                     .collect(),
@@ -80,10 +84,13 @@ impl From<Microcontroller> for MicrocontrollerSerDe {
                         .map(|c| ComponentsBridgeInnerObject {
                             id: c.id,
                             other: {
-                                let mut m =
-                                    c.ser_to_map().remove("object").unwrap().into_map().unwrap();
-                                m.remove("@id");
-                                m
+                                let mut m = c.ser_to_map();
+                                let mut o = m.remove("object").unwrap().into_map().unwrap();
+                                if let Some(pos) = m.remove("pos") {
+                                    o.insert_idx(0, "pos".into(), pos);
+                                }
+                                o.remove("@id");
+                                o
                             },
                         })
                         .collect();

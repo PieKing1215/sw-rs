@@ -242,56 +242,42 @@ impl Microcontroller {
                 #[allow(clippy::wildcard_in_or_patterns)]
                 BridgeComponent {
                     id: component_id,
+                    pos: PositionXY::default(),
                     component: match (typ, mode) {
-                        (Type::OnOff, IONodeType::Input) => BridgeComponentType::OnOffIn {
-                            pos: PositionXY { x: 0.0, y: 0.0 },
-                            unused_input: None,
-                            output: None,
+                        (Type::OnOff, IONodeType::Input) => {
+                            BridgeComponentType::OnOffIn { unused_input: None, output: None }
                         },
-                        (Type::Composite, IONodeType::Input) => BridgeComponentType::CompositeIn {
-                            pos: PositionXY { x: 0.0, y: 0.0 },
-                            unused_input: None,
-                            output: None,
+                        (Type::Composite, IONodeType::Input) => {
+                            BridgeComponentType::CompositeIn { unused_input: None, output: None }
                         },
-                        (Type::Video, IONodeType::Input) => BridgeComponentType::VideoIn {
-                            pos: PositionXY { x: 0.0, y: 0.0 },
-                            unused_input: None,
-                            output: None,
+                        (Type::Video, IONodeType::Input) => {
+                            BridgeComponentType::VideoIn { unused_input: None, output: None }
                         },
-                        (Type::Audio, IONodeType::Input) => BridgeComponentType::AudioIn {
-                            pos: PositionXY { x: 0.0, y: 0.0 },
-                            unused_input: None,
-                            output: None,
+                        (Type::Audio, IONodeType::Input) => {
+                            BridgeComponentType::AudioIn { unused_input: None, output: None }
                         },
-                        (Type::Number | _, IONodeType::Input) => BridgeComponentType::NumberIn {
-                            pos: PositionXY { x: 0.0, y: 0.0 },
-                            unused_input: None,
-                            output: None,
+                        (Type::Number | _, IONodeType::Input) => {
+                            BridgeComponentType::NumberIn { unused_input: None, output: None }
                         },
                         (Type::OnOff, IONodeType::Output) => BridgeComponentType::OnOffOut {
-                            pos: PositionXY { x: 0.0, y: 0.0 },
                             input: TypedInputConnection::default(),
                             unused_output: None,
                         },
                         (Type::Composite, IONodeType::Output) => {
                             BridgeComponentType::CompositeOut {
-                                pos: PositionXY { x: 0.0, y: 0.0 },
                                 input: TypedInputConnection::default(),
                                 unused_output: None,
                             }
                         },
                         (Type::Video, IONodeType::Output) => BridgeComponentType::VideoOut {
-                            pos: PositionXY { x: 0.0, y: 0.0 },
                             input: TypedInputConnection::default(),
                             unused_output: None,
                         },
                         (Type::Audio, IONodeType::Output) => BridgeComponentType::AudioOut {
-                            pos: PositionXY { x: 0.0, y: 0.0 },
                             input: TypedInputConnection::default(),
                             unused_output: None,
                         },
                         (Type::Number | _, IONodeType::Output) => BridgeComponentType::NumberOut {
-                            pos: PositionXY { x: 0.0, y: 0.0 },
                             input: TypedInputConnection::default(),
                             unused_output: None,
                         },
@@ -349,8 +335,11 @@ impl Microcontroller {
         self.id_counter += 1;
         let component_id = self.id_counter;
 
-        self.components
-            .push(Component { id: component_id, component });
+        self.components.push(Component {
+            id: component_id,
+            pos: PositionXY::default(),
+            component,
+        });
 
         // cannot panic since we just added an element
         let l = self.components.len();

@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sw_mc::{
     components::{ComponentType, TypedInputConnection},
-    util::serde_utils::PositionXY,
     Microcontroller,
 };
 
@@ -13,7 +12,6 @@ fn main() {
 
     let p: W = W {
         c: ComponentType::CompositeReadOnOff {
-            pos: PositionXY { x: 1.0, y: 2.0 },
             composite: Some(TypedInputConnection::new(2, 0)),
             variable_channel: Some(TypedInputConnection::empty()),
             channel: 0,

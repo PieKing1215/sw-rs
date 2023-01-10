@@ -164,6 +164,17 @@ impl<T: CompileType, const S: bool> From<ComponentConnection> for TypedInputConn
     }
 }
 
+impl<T: CompileType, const S: bool> From<Option<ComponentConnection>>
+    for TypedInputConnection<T, S>
+{
+    fn from(c: Option<ComponentConnection>) -> Self {
+        match c {
+            Some(c) => Self::new(c),
+            None => Self::empty(),
+        }
+    }
+}
+
 impl<T: CompileType, const S: bool> TypedInputConnection<T, S> {
     /// Creates a [`TypedInputConnection`] with the given connection.
     #[must_use]
@@ -187,6 +198,16 @@ impl<T: CompileType, const S: bool> TypedInputConnection<T, S> {
             v: None,
             _phantom: PhantomData,
         }
+    }
+
+    /// Set the connection to a [`ComponentConnection`].
+    pub fn set(&mut self, conn: ComponentConnection) {
+        self.connection = Some(conn);
+    }
+
+    /// Clears the current connection, if present.
+    pub fn clear(&mut self) {
+        self.connection = None;
     }
 }
 

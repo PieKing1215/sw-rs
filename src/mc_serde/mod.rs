@@ -1,6 +1,6 @@
 //! Module containing ser/de code for microcontrollers
 
-use crate::{components::BridgeComponent, IONode, IONodeDesign, Microcontroller};
+use crate::{IONode, IONodeDesign, Microcontroller};
 
 use self::microcontroller::{
     ComponentsBridgeInnerObject, Group, IONodeInner, IONodeSerDe, MicrocontrollerSerDe,
@@ -45,7 +45,7 @@ impl From<Microcontroller> for MicrocontrollerSerDe {
                     .iter()
                     .map(|io| IONodeSerDe {
                         id: io.design.node_id,
-                        component_id: io.logic.id(),
+                        component_id: io.logic.id,
                         node: IONodeInner {
                             label: io.design.label.clone(),
                             mode: io.design.mode,
@@ -63,7 +63,7 @@ impl From<Microcontroller> for MicrocontrollerSerDe {
                     .components
                     .iter()
                     .map(|c| ComponentsBridgeInnerObject {
-                        id: c.id(),
+                        id: c.id,
                         other: {
                             let mut m =
                                 c.ser_to_map().remove("object").unwrap().into_map().unwrap();
@@ -78,7 +78,7 @@ impl From<Microcontroller> for MicrocontrollerSerDe {
                         .iter()
                         .map(|ion| &ion.logic)
                         .map(|c| ComponentsBridgeInnerObject {
-                            id: c.id(),
+                            id: c.id,
                             other: {
                                 let mut m =
                                     c.ser_to_map().remove("object").unwrap().into_map().unwrap();
@@ -105,7 +105,7 @@ impl From<Microcontroller> for MicrocontrollerSerDe {
                         v.sort_by_key(|c| {
                             mc.components_bridge_order
                                 .iter()
-                                .position(|id| *id == c.id())
+                                .position(|id| *id == c.id)
                                 .unwrap()
                         });
 
@@ -138,7 +138,7 @@ impl From<MicrocontrollerSerDe> for Microcontroller {
                 .components_bridge
                 .components_bridge
                 .iter()
-                .map(BridgeComponent::id)
+                .map(|bc| bc.id)
                 .collect(),
             io: sd
                 .nodes
@@ -150,15 +150,14 @@ impl From<MicrocontrollerSerDe> for Microcontroller {
                         .components_bridge
                         .components_bridge
                         .iter()
-                        .position(|c| c.id() == n.component_id)
+                        .position(|c| c.id == n.component_id)
                         .expect(&format!(
                             "Couldn't find node {}'s component with id {}",
                             n.id, n.component_id
                         ));
                     let c = sd.group.components_bridge.components_bridge.remove(c_idx);
                     assert_eq!(
-                        n.component_id,
-                        c.id(),
+                        n.component_id, c.id,
                         "Node's component_id didn't match component's id"
                     );
                     IONode {

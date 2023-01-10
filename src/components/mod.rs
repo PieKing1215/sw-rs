@@ -2,6 +2,7 @@
 
 use std::marker::PhantomData;
 use std::num::ParseFloatError;
+use std::str::FromStr;
 
 use crate::types::CompileType;
 use crate::util::fakemap_hack::FakeMapExt;
@@ -35,35 +36,34 @@ fn skip_connection<T: CompileType, const S: bool>(v: &Option<ConnectionV>) -> bo
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct ComponentConnection {
     /// The id of the component to connect to.
-    #[serde(
-        rename = "@component_id",
-        deserialize_with = "deserialize_string_to_u32"
-    )]
+    #[serde(rename = "@component_id", deserialize_with = "de_from_str")]
     pub component_id: u32,
     /// The index on the other component to connect to.
     #[serde(
         rename = "@node_index",
-        deserialize_with = "deserialize_string_to_u8",
+        deserialize_with = "de_from_str",
         default,
         skip_serializing_if = "is_default"
     )]
     pub node_index: u8,
 }
 
-fn deserialize_string_to_u32<'de, D>(de: D) -> Result<u32, D::Error>
+pub(crate) fn de_from_str<'de, D, T: FromStr>(de: D) -> Result<T, D::Error>
 where
     D: serde::Deserializer<'de>,
+    <T as FromStr>::Err: std::fmt::Debug,
 {
     let s = String::deserialize(de)?;
     Ok(s.parse().unwrap())
 }
 
-fn deserialize_string_to_u8<'de, D>(de: D) -> Result<u8, D::Error>
+pub(crate) fn de_from_str_opt<'de, D, T: FromStr>(de: D) -> Result<Option<T>, D::Error>
 where
     D: serde::Deserializer<'de>,
+    <T as FromStr>::Err: std::fmt::Debug,
 {
-    let s = String::deserialize(de)?;
-    Ok(s.parse().unwrap())
+    let s = Option::<String>::deserialize(de)?;
+    Ok(s.map(|s| s.parse().unwrap()))
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Default)]
@@ -191,7 +191,7 @@ struct _ComponentDe {
     inner: FakeMap<String, RecursiveStringMap>,
 }
 
-impl From<_ComponentDe> for Component {
+impl From<_ComponentDe> for ComponentWithId {
     fn from(de: _ComponentDe) -> Self {
         #[derive(Serialize, Deserialize, Debug)]
         struct W {
@@ -205,7 +205,7 @@ impl From<_ComponentDe> for Component {
         let ser = W { object: de }.serialize(se).unwrap();
         let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
-        let de: Component = quick_xml::de::from_str(ser)
+        let de: ComponentWithId = quick_xml::de::from_str(ser)
             .expect(&format!("Deserializing component:\n{db}\n{ser}\n"));
 
         de
@@ -218,7 +218,7 @@ struct _BridgeComponentDe {
     inner: FakeMap<String, RecursiveStringMap>,
 }
 
-impl From<_BridgeComponentDe> for BridgeComponent {
+impl From<_BridgeComponentDe> for BridgeComponentWithId {
     fn from(de: _BridgeComponentDe) -> Self {
         #[derive(Serialize, Deserialize, Debug)]
         struct W {
@@ -232,7 +232,7 @@ impl From<_BridgeComponentDe> for BridgeComponent {
         let ser = W { object: de }.serialize(se).unwrap();
         let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
-        let de: BridgeComponent = quick_xml::de::from_str(ser)
+        let de: BridgeComponentWithId = quick_xml::de::from_str(ser)
             .expect(&format!("Deserializing bridge component:\n{db}\n{ser}\n"));
 
         de
@@ -240,7 +240,7 @@ impl From<_BridgeComponentDe> for BridgeComponent {
 }
 
 #[allow(dead_code)]
-pub(crate) fn component_deserialize<'de, D>(de: D) -> Result<Component, D::Error>
+pub(crate) fn component_deserialize<'de, D>(de: D) -> Result<ComponentWithId, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -282,7 +282,7 @@ where
     Ok(cde.into())
 }
 
-pub(crate) fn components_deserialize<'de, D>(de: D) -> Result<Vec<Component>, D::Error>
+pub(crate) fn components_deserialize<'de, D>(de: D) -> Result<Vec<ComponentWithId>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -333,15 +333,20 @@ where
 
 #[allow(dead_code)]
 pub(crate) fn component_serialize<S>(
-    component: &Component,
+    component: &ComponentWithId,
     serializer: S,
 ) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
+    #[derive(Serialize, Debug)]
+    struct W<'a> {
+        object: &'a ComponentWithId,
+    }
+
     let mut se = quick_xml::se::Serializer::new(String::new());
     se.escape(quick_xml::se::QuoteLevel::Partial);
-    let ser = component.serialize(se).unwrap();
+    let ser = W { object: component }.serialize(se).unwrap();
     let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
     let mut cde: _ComponentDe = quick_xml::de::from_str(ser).unwrap();
@@ -351,152 +356,33 @@ where
         }
     }
 
-    // see note on NumericalJunction
-    if matches!(component, Component::NumericalJunction { .. }) {
-        // FakeMap has no get_mut
-        if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
-            o.remove("out2");
-            o.duplicate_by_key("out1".into(), "__reserved".into());
-            cde.inner
-                .insert("object".into(), RecursiveStringMap::Map(o));
-        }
-    }
-
-    // map in1,in2,in3,etc. to inc,in1,in2,etc.
-    // see note on CompositeWriteNum/CompositeWriteOnOff
-    if let Component::CompositeWriteNum { count, offset, .. }
-    | Component::CompositeWriteOnOff { count, offset, .. } = component
-    {
-        if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
-            for (k, _) in o.iter_mut() {
-                if *k == "in1" {
-                    *k = "inc".into();
-                } else if *k == "in34" {
-                    *k = "inoff".into();
-                } else if k.starts_with("in") {
-                    if let Ok(n) = k.trim_start_matches("in").parse::<u8>() {
-                        *k = format!("in{}", n - 1);
-                    }
-                }
-            }
-
-            if *offset != -1 {
-                o.remove("inoff");
-            }
-
-            for i in 1..=32 {
-                if i > *count {
-                    let l = format!("in{}", i);
-                    o.remove(&l);
-                }
-            }
-
-            cde.inner
-                .insert("object".into(), RecursiveStringMap::Map(o));
-        }
-    }
-
-    // remove in2 if channel is constant
-    if let Component::CompositeReadNum { channel, .. }
-    | Component::CompositeReadOnOff { channel, .. } = component
-    {
-        if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
-            if *channel == -1 {
-                // for some reason, in these nodes in2 is supposed to go after out1
-                let in2 = o.remove("in2").unwrap();
-                o.insert("in2".into(), in2);
-            } else {
-                o.remove("in2");
-            }
-
-            cde.inner
-                .insert("object".into(), RecursiveStringMap::Map(o));
-        }
-    }
-
     cde.serialize(serializer)
 }
 
-pub(crate) fn components_serialize<S>(components: &[Component], ser: S) -> Result<S::Ok, S::Error>
+pub(crate) fn components_serialize<S>(
+    components: &[ComponentWithId],
+    ser: S,
+) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
     let cdes = components
         .iter()
         .map(|c| {
+            #[derive(Serialize, Debug)]
+            struct W<'a> {
+                object: &'a ComponentWithId,
+            }
+
             let mut se = quick_xml::se::Serializer::new(String::new());
             se.escape(quick_xml::se::QuoteLevel::Partial);
-            let ser = c.serialize(se).unwrap();
+            let ser = W { object: c }.serialize(se).unwrap();
             let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
             let mut cde: _ComponentDe = quick_xml::de::from_str(ser).unwrap();
             if let Some(RecursiveStringMap::String(s)) = cde.inner.get("@type").cloned() {
                 if s == "0" {
                     cde.inner.remove("@type");
-                }
-            }
-
-            // rename out2 to out1
-            // see note on NumericalJunction
-            if matches!(c, Component::NumericalJunction { .. }) {
-                // FakeMap has no get_mut
-                if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
-                    o.remove("out2");
-                    o.duplicate_by_key("out1".into(), "__reserved".into());
-                    cde.inner
-                        .insert("object".into(), RecursiveStringMap::Map(o));
-                }
-            }
-
-            // map in1,in2,in3,etc. to inc,in1,in2,etc.
-            // see note on CompositeWriteNum/CompositeWriteOnOff
-            if let Component::CompositeWriteNum { count, offset, .. }
-            | Component::CompositeWriteOnOff { count, offset, .. } = c
-            {
-                if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
-                    for (k, _) in o.iter_mut() {
-                        if *k == "in1" {
-                            *k = "inc".into();
-                        } else if *k == "in34" {
-                            *k = "inoff".into();
-                        } else if k.starts_with("in") {
-                            if let Ok(n) = k.trim_start_matches("in").parse::<u8>() {
-                                *k = format!("in{}", n - 1);
-                            }
-                        }
-                    }
-
-                    if *offset != -1 {
-                        o.remove("inoff");
-                    }
-
-                    for i in 1..=32 {
-                        if i > *count {
-                            let l = format!("in{}", i);
-                            o.remove(&l);
-                        }
-                    }
-
-                    cde.inner
-                        .insert("object".into(), RecursiveStringMap::Map(o));
-                }
-            }
-
-            // remove in2 if channel is constant
-            if let Component::CompositeReadNum { channel, .. }
-            | Component::CompositeReadOnOff { channel, .. } = c
-            {
-                if let Some(RecursiveStringMap::Map(mut o)) = cde.inner.remove("object") {
-                    if *channel == -1 {
-                        // for some reason, in these nodes in2 is supposed to go after out1
-                        let in2 = o.remove("in2").unwrap();
-                        o.insert("in2".into(), in2);
-                    } else {
-                        o.remove("in2");
-                    }
-
-                    cde.inner
-                        .insert("object".into(), RecursiveStringMap::Map(o));
                 }
             }
 
@@ -522,8 +408,8 @@ macro_rules! components {
                 $(
                     #[serde(rename = "" $id "")]
                     $x {
-                        #[serde(rename = "@id")]
-                        id: u32,
+                        // #[serde(rename = "@id")]
+                        // id: u32,
                         /// The position of the component.
                         ///
                         /// Each grid square is 0.25 units.
@@ -582,16 +468,6 @@ macro_rules! components {
                     }
                 }
 
-                /// Returns the id of this [`Component`].
-                #[must_use]
-                pub fn id(&self) -> u32 {
-                    match self {
-                        $(
-                            Self::$x { id, .. } => *id,
-                        )*
-                    }
-                }
-
                 /// Immutably borrows the position of this [`Component`].
                 #[must_use]
                 pub fn position(&self) -> &PositionXY {
@@ -614,7 +490,7 @@ macro_rules! components {
 
                 #[allow(dead_code)]
                 #[must_use]
-                pub(crate) fn ser_to_map(&self) -> FakeMap<String, RecursiveStringMap> {
+                fn ser_to_map(&self) -> FakeMap<String, RecursiveStringMap> {
                     let mut se = quick_xml::se::Serializer::new(String::new());
                     se.escape(quick_xml::se::QuoteLevel::Partial);
                     let ser = self.serialize(se).unwrap();
@@ -637,7 +513,12 @@ macro_rules! components {
 pub struct TextValue {
     #[serde(rename = "@text")]
     text: String,
-    #[serde(rename = "@value", default, skip_serializing_if = "is_default")]
+    #[serde(
+        rename = "@value",
+        default,
+        skip_serializing_if = "is_default",
+        deserialize_with = "de_from_str"
+    )]
     value: f64,
 }
 
@@ -674,6 +555,7 @@ pub struct DropdownItem {
 }
 
 mod dropdown_items {
+    use fakemap::FakeMap;
     use serde::{Deserialize, Serialize};
 
     use super::DropdownItem;
@@ -688,8 +570,9 @@ mod dropdown_items {
     where
         D: serde::Deserializer<'de>,
     {
-        let di = DropdownItems::deserialize(de)?;
-        Ok(di.items)
+        let r = FakeMap::<String, DropdownItem>::deserialize(de)?;
+        let items = r.into_iter().map(|(_, v)| v).collect();
+        Ok(items)
     }
 
     pub fn serialize<S>(items: &[DropdownItem], ser: S) -> Result<S::Ok, S::Error>
@@ -827,9 +710,9 @@ components! { Component,
     },
     25 = JKFlipFlop[set(1): OnOff, reset(2): OnOff][out(1): OnOff, not_out(2): OnOff]{},
     26 = Capacitor[charge(1): OnOff][stored(1): OnOff]{
-        #[serde(rename = "@ct", default = "one", skip_serializing_if="is_one")]
+        #[serde(rename = "@ct", default = "one", skip_serializing_if="is_one", deserialize_with = "de_from_str")]
         ct: f32,
-        #[serde(rename = "@dt", default = "one", skip_serializing_if="is_one")]
+        #[serde(rename = "@dt", default = "one", skip_serializing_if="is_one", deserialize_with = "de_from_str")]
         dt: f32,
 
         #[serde(rename = "@c1", default, skip_serializing_if = "is_default")]
@@ -840,9 +723,9 @@ components! { Component,
         __p: Option<String>, // ??
     },
     27 = Blinker[control(1): OnOff][out(1): OnOff]{
-        #[serde(rename = "@on", default = "one", skip_serializing_if="is_one")]
+        #[serde(rename = "@on", default = "one", skip_serializing_if="is_one", deserialize_with = "de_from_str")]
         on: f32,
-        #[serde(rename = "@off", default = "one", skip_serializing_if="is_one")]
+        #[serde(rename = "@off", default = "one", skip_serializing_if="is_one", deserialize_with = "de_from_str")]
         off: f32,
 
         #[serde(rename = "@c", default, skip_serializing_if = "is_default")]
@@ -850,19 +733,19 @@ components! { Component,
     },
     28 = PushToToggle[toggle(1): OnOff][state(1): OnOff]{},
     29 = CompositeReadOnOff[composite(1): Composite, variable_channel(2): Number][out(1): OnOff]{
-        #[serde(rename = "@i", default, skip_serializing_if = "is_default")] // TODO
+        #[serde(rename = "@i", default, skip_serializing_if = "is_default", deserialize_with = "de_from_str")] // TODO
         channel: i8, // TODO: "variable (from node)" is -1, make this an enum
     },
     30 = _OldCompositeWriteOnOff[composite(1): Composite, val(2): OnOff][out(1): Composite]{
-        #[serde(rename = "@i", default, skip_serializing_if = "is_default")] // TODO
+        #[serde(rename = "@i", default, skip_serializing_if = "is_default", deserialize_with = "de_from_str")] // TODO
         channel: u8, // no option for "variable (from node)"
     },
     31 = CompositeReadNum[composite(1): Composite, variable_channel(2): Number][out(1): Number]{
-        #[serde(rename = "@i", default, skip_serializing_if = "is_default")] // TODO
+        #[serde(rename = "@i", default, skip_serializing_if = "is_default", deserialize_with = "de_from_str")] // TODO
         channel: i8, // TODO: "variable (from node)" is -1, make this an enum
     },
     32 = _OldCompositeWriteNum[composite(1): Composite, val(2): Number][out(1): Composite]{
-        #[serde(rename = "@i", default, skip_serializing_if = "is_default")] // TODO
+        #[serde(rename = "@i", default, skip_serializing_if = "is_default", deserialize_with = "de_from_str")] // TODO
         channel: u8, // no option for "variable (from node)"
     },
     33 = PropertyToggle[][out(1): OnOff]{
@@ -872,7 +755,7 @@ components! { Component,
         on: String,
         #[serde(rename = "@off", default = "str_off", skip_serializing_if = "is_str_off")]
         off: String,
-        #[serde(rename = "@v", default, skip_serializing_if = "is_default")]
+        #[serde(rename = "@v", default, skip_serializing_if = "is_default", deserialize_with = "de_from_str")]
         value: bool,
     },
     34 = PropertyNumber[][out(1): Number]{
@@ -893,7 +776,7 @@ components! { Component,
         expr: String,
     },
     37 = UpDownCounter[up(1): OnOff, down(2): OnOff, reset(3): OnOff][out(1): Number]{
-        #[serde(rename = "@m", default, skip_serializing_if = "is_default")]
+        #[serde(rename = "@m", default, skip_serializing_if = "is_default", deserialize_with = "de_from_str")]
         mode: u8, // 1 for clamp, 0 for disabled
 
         #[serde(rename = "@is", default, skip_serializing_if = "is_default")]
@@ -921,16 +804,16 @@ components! { Component,
     },
     // NOTE: CompositeWriteNum uses tags inc, in1, in2, etc.
     40 = CompositeWriteNum[composite(1): Composite, in1(2): Number, in2(3): Number, in3(4): Number, in4(5): Number, in5(6): Number, in6(7): Number, in7(8): Number, in8(9): Number, in9(10): Number, in10(11): Number, in11(12): Number, in12(13): Number, in13(14): Number, in14(15): Number, in15(16): Number, in16(17): Number, in17(18): Number, in18(19): Number, in19(20): Number, in20(21): Number, in21(22): Number, in22(23): Number, in23(24): Number, in24(25): Number, in25(26): Number, in26(27): Number, in27(28): Number, in28(29): Number, in29(30): Number, in30(31): Number, in31(32): Number, in32(33): Number, start(34): Number][out(1): Composite]{
-        #[serde(rename = "@count")]
+        #[serde(rename = "@count", deserialize_with = "de_from_str")]
         count: u8,
-        #[serde(rename = "@offset", default, skip_serializing_if = "is_default")]
+        #[serde(rename = "@offset", default, skip_serializing_if = "is_default", deserialize_with = "de_from_str")]
         offset: i8, // TODO: "variable (from node)" is -1, make this an enum
     },
     // NOTE: CompositeWriteOnOff uses tags inc, in1, in2, etc.
     41 = CompositeWriteOnOff[composite(1): Composite, in1(2): OnOff, in2(3): OnOff, in3(4): OnOff, in4(5): OnOff, in5(6): OnOff, in6(7): OnOff, in7(8): OnOff, in8(9): OnOff, in9(10): OnOff, in10(11): OnOff, in11(12): OnOff, in12(13): OnOff, in13(14): OnOff, in14(15): OnOff, in15(16): OnOff, in16(17): OnOff, in17(18): OnOff, in18(19): OnOff, in19(20): OnOff, in20(21): OnOff, in21(22): OnOff, in22(23): OnOff, in23(24): OnOff, in24(25): OnOff, in25(26): OnOff, in26(27): OnOff, in27(28): OnOff, in28(29): OnOff, in29(30): OnOff, in30(31): OnOff, in31(32): OnOff, in32(33): OnOff, start(34): Number][out(1): Composite]{
-        #[serde(rename = "@count")]
+        #[serde(rename = "@count", deserialize_with = "de_from_str")]
         count: u8,
-        #[serde(rename = "@offset", default, skip_serializing_if = "is_default")]
+        #[serde(rename = "@offset", default, skip_serializing_if = "is_default", deserialize_with = "de_from_str")]
         offset: i8, // TODO: "variable (from node)" is -1, make this an enum
     },
     42 = Equal[input_a(1): Number, input_b(2): Number][out(1): OnOff]{
@@ -940,7 +823,7 @@ components! { Component,
     43 = TooltipNum[num(1): Number, is_error(2): OnOff][]{
         #[serde(rename = "@l")]
         label: String,
-        #[serde(rename = "@m", default, skip_serializing_if = "is_default")]
+        #[serde(rename = "@m", default, skip_serializing_if = "is_default", deserialize_with = "de_from_str")]
         mode: u8, // TODO: enum: 0 for Always, 1 for If Error, 2 for If No Error
     },
     44 = TooltipOnOff[display(1): OnOff][]{
@@ -950,7 +833,7 @@ components! { Component,
         on: String,
         #[serde(rename = "@off")]
         off: String,
-        #[serde(rename = "@m", default, skip_serializing_if = "is_default")]
+        #[serde(rename = "@m", default, skip_serializing_if = "is_default", deserialize_with = "de_from_str")]
         mode: u8, // TODO: enum: 0 for Always, 1 for If Error, 2 for If No Error
     },
     45 = Func1n[input(1): Number][out(1): Number]{
@@ -966,35 +849,35 @@ components! { Component,
         expr: String,
     },
     48 = Pulse[input(1): OnOff][out(1): OnOff]{
-        #[serde(rename = "@m", default, skip_serializing_if="is_default")]
+        #[serde(rename = "@m", default, skip_serializing_if="is_default", deserialize_with = "de_from_str_opt")]
         mode: Option<u8>, // None for Off->On, 0 for On->Off, 2 for Always
 
         #[serde(rename = "@p", default, skip_serializing_if = "is_default")]
         __p: Option<String>, // ??
     },
     49 = TimerTON[enable(1): OnOff, duration(2): Number][complete(1): OnOff]{
-        #[serde(rename = "@u", default, skip_serializing_if="is_default")]
+        #[serde(rename = "@u", default, skip_serializing_if="is_default", deserialize_with = "de_from_str")]
         units: u8, // TODO: enum: 0 for secs, 1 for ticks
 
         #[serde(rename = "@t", default, skip_serializing_if = "is_default")]
         __t: Option<String>, // ??
     },
     50 = TimerTOF[enable(1): OnOff, duration(2): Number][timing(1): OnOff]{
-        #[serde(rename = "@u", default, skip_serializing_if="is_default")]
+        #[serde(rename = "@u", default, skip_serializing_if="is_default", deserialize_with = "de_from_str")]
         units: u8, // TODO: enum: 0 for secs, 1 for ticks
 
         #[serde(rename = "@t", default, skip_serializing_if = "is_default")]
         __t: Option<String>, // ??
     },
     51 = TimerRTO[enable(1): OnOff, duration(2): Number, reset(3): OnOff][complete(1): OnOff]{
-        #[serde(rename = "@u", default, skip_serializing_if="is_default")]
+        #[serde(rename = "@u", default, skip_serializing_if="is_default", deserialize_with = "de_from_str")]
         units: u8, // TODO: enum: 0 for secs, 1 for ticks
 
         #[serde(rename = "@t", default, skip_serializing_if = "is_default")]
         __t: Option<String>, // ??
     },
     52 = TimerRTF[enable(1): OnOff, duration(2): Number, reset(3): OnOff][timing(1): OnOff]{
-        #[serde(rename = "@u", default, skip_serializing_if="is_default")]
+        #[serde(rename = "@u", default, skip_serializing_if="is_default", deserialize_with = "de_from_str")]
         units: u8, // TODO: enum: 0 for secs, 1 for ticks
 
         #[serde(rename = "@t", default, skip_serializing_if = "is_default")]
@@ -1143,7 +1026,9 @@ components! { BridgeComponent,
     }
 }
 
-pub(crate) fn bridge_components_deserialize<'de, D>(de: D) -> Result<Vec<BridgeComponent>, D::Error>
+pub(crate) fn bridge_components_deserialize<'de, D>(
+    de: D,
+) -> Result<Vec<BridgeComponentWithId>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
@@ -1165,7 +1050,7 @@ where
 }
 
 pub(crate) fn bridge_components_serialize<S>(
-    components: &[BridgeComponent],
+    components: &[BridgeComponentWithId],
     ser: S,
 ) -> Result<S::Ok, S::Error>
 where
@@ -1174,9 +1059,14 @@ where
     let cdes = components
         .iter()
         .map(|c| {
+            #[derive(Serialize, Debug)]
+            struct W<'a> {
+                object: &'a BridgeComponentWithId,
+            }
+
             let mut se = quick_xml::se::Serializer::new(String::new());
             se.escape(quick_xml::se::QuoteLevel::Partial);
-            let ser = c.serialize(se).unwrap();
+            let ser = W { object: c }.serialize(se).unwrap();
             let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
             let mut cde: _ComponentDe = quick_xml::de::from_str(ser).unwrap();
@@ -1191,4 +1081,197 @@ where
         .collect::<Vec<_>>();
 
     ser.collect_seq(cdes.iter())
+}
+
+/// Component with its id.
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(from = "_ComponentWithIdDe", into = "_ComponentWithIdDe")]
+pub struct ComponentWithId {
+    #[serde(rename = "@id")]
+    pub(crate) id: u32,
+    /// The [`Component`].
+    #[serde(flatten)]
+    pub component: Component,
+}
+
+impl ComponentWithId {
+    /// Gets the id for this component.
+    ///
+    /// The id is managed by the [`Microcontroller`].
+    #[allow(clippy::must_use_candidate)]
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+
+    #[allow(dead_code)]
+    #[must_use]
+    pub(crate) fn ser_to_map(&self) -> FakeMap<String, RecursiveStringMap> {
+        let mut m = self.component.ser_to_map();
+
+        m.insert_idx(
+            0,
+            "@id".into(),
+            RecursiveStringMap::String(self.id.to_string()),
+        );
+
+        m
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct _ComponentWithIdDe {
+    #[serde(flatten)]
+    inner: FakeMap<String, RecursiveStringMap>,
+}
+
+impl From<_ComponentWithIdDe> for ComponentWithId {
+    fn from(mut de: _ComponentWithIdDe) -> Self {
+        #[derive(Serialize, Deserialize, Debug)]
+        struct W {
+            c: _ComponentWithIdDe,
+        }
+
+        #[derive(Serialize, Deserialize, Clone, Debug)]
+        #[serde(rename = "c")]
+        struct _RawComponentWithId {
+            #[serde(rename = "@id")]
+            pub id: u32,
+            #[serde(flatten)]
+            pub component: Box<Component>,
+        }
+
+        if let Some(RecursiveStringMap::Map(mut o)) = de.inner.remove("object") {
+            // println!("{o:?}");
+            de.inner
+                .insert_idx(0, "@id".into(), o.remove("@id").unwrap());
+
+            de.inner.insert("object".into(), RecursiveStringMap::Map(o));
+        }
+
+        let db = format!("{de:?}");
+
+        // println!("pre {de:?}");
+        let mut se = quick_xml::se::Serializer::new(String::new());
+        se.escape(quick_xml::se::QuoteLevel::Partial);
+        let ser = W { c: de }.serialize(se).unwrap();
+        let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
+
+        // println!("se {ser} {}", size_of::<_RawComponentWithId>());
+        let de: _RawComponentWithId = quick_xml::de::from_str(ser)
+            .expect(&format!("Deserializing component:\n{db}\n{ser}\n"));
+
+        // println!("don {de:?}");
+
+        ComponentWithId { id: de.id, component: *de.component }
+    }
+}
+
+impl From<ComponentWithId> for _ComponentWithIdDe {
+    fn from(c: ComponentWithId) -> Self {
+        let mut m = c.ser_to_map();
+
+        if let Some(RecursiveStringMap::Map(mut o)) = m.remove("object") {
+            o.insert_idx(0, "@id".into(), m.remove("@id").unwrap());
+
+            m.insert("object".into(), RecursiveStringMap::Map(o));
+        }
+
+        let de: _ComponentWithIdDe = _ComponentWithIdDe { inner: m };
+
+        de
+    }
+}
+
+/// Component with its id.
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(from = "_BridgeComponentWithIdDe", into = "_BridgeComponentWithIdDe")]
+pub struct BridgeComponentWithId {
+    #[serde(rename = "@id")]
+    pub(crate) id: u32,
+    /// The [`Component`].
+    #[serde(flatten)]
+    pub component: BridgeComponent,
+}
+
+impl BridgeComponentWithId {
+    /// Gets the id for this component.
+    ///
+    /// The id is managed by the [`Microcontroller`].
+    #[allow(clippy::must_use_candidate)]
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+
+    #[allow(dead_code)]
+    #[must_use]
+    pub(crate) fn ser_to_map(&self) -> FakeMap<String, RecursiveStringMap> {
+        let mut m = self.component.ser_to_map();
+
+        m.insert_idx(
+            0,
+            "@id".into(),
+            RecursiveStringMap::String(self.id.to_string()),
+        );
+
+        m
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct _BridgeComponentWithIdDe {
+    #[serde(flatten)]
+    inner: FakeMap<String, RecursiveStringMap>,
+}
+
+impl From<_BridgeComponentWithIdDe> for BridgeComponentWithId {
+    fn from(mut de: _BridgeComponentWithIdDe) -> Self {
+        #[derive(Serialize, Deserialize, Debug)]
+        struct W {
+            object: _BridgeComponentWithIdDe,
+        }
+
+        #[derive(Serialize, Deserialize, Clone, Debug)]
+        struct _RawBridgeComponentWithId {
+            #[serde(rename = "@id")]
+            pub id: u32,
+            #[serde(flatten)]
+            pub component: BridgeComponent,
+        }
+
+        if let Some(RecursiveStringMap::Map(mut o)) = de.inner.remove("object") {
+            // println!("{o:?}");
+            de.inner
+                .insert_idx(0, "@id".into(), o.remove("@id").unwrap());
+
+            de.inner.insert("object".into(), RecursiveStringMap::Map(o));
+        }
+
+        let db = format!("{de:?}");
+
+        let mut se = quick_xml::se::Serializer::new(String::new());
+        se.escape(quick_xml::se::QuoteLevel::Partial);
+        let ser = W { object: de }.serialize(se).unwrap();
+        let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
+
+        let de: _RawBridgeComponentWithId = quick_xml::de::from_str(ser)
+            .expect(&format!("Deserializing component:\n{db}\n{ser}\n"));
+
+        BridgeComponentWithId { id: de.id, component: de.component }
+    }
+}
+
+impl From<BridgeComponentWithId> for _BridgeComponentWithIdDe {
+    fn from(c: BridgeComponentWithId) -> Self {
+        let mut m = c.ser_to_map();
+
+        if let Some(RecursiveStringMap::Map(mut o)) = m.remove("object") {
+            o.insert_idx(0, "@id".into(), m.remove("@id").unwrap());
+
+            m.insert("object".into(), RecursiveStringMap::Map(o));
+        }
+
+        let de: _BridgeComponentWithIdDe = _BridgeComponentWithIdDe { inner: m };
+
+        de
+    }
 }

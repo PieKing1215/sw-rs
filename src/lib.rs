@@ -12,7 +12,9 @@ pub mod util;
 
 use std::collections::HashSet;
 
-use components::{BridgeComponent, Component};
+use components::{
+    BridgeComponent, BridgeComponentWithId, Component, ComponentWithId, TypedInputConnection,
+};
 use mc_serde::microcontroller::{IONodeType, MicrocontrollerSerDe};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -52,15 +54,17 @@ pub struct Microcontroller {
 
     /// Definition of IO nodes.
     ///
-    /// Subject to change.
-    pub io: Vec<IONode>,
+    /// Needs to be private so we can manage ids
+    io: Vec<IONode>,
     /// Vec of component_id.
     ///
     /// Needed because the order of components isn't necessarily the same as the order of IO nodes.
     components_bridge_order: Vec<u32>,
 
     /// The main components (IO nodes are in [`io`][`Self::io`]).
-    pub components: Vec<Component>,
+    ///
+    /// Needs to be private so we can manage ids
+    components: Vec<ComponentWithId>,
 }
 
 #[allow(missing_docs)]
@@ -160,11 +164,9 @@ impl Microcontroller {
             if !self
                 .components_bridge_order
                 .iter()
-                .any(|c| *c == ion.logic.id())
+                .any(|c| *c == ion.logic.id)
             {
-                return Err(MCValidationError::MissingIONodeComponentOrder(
-                    ion.logic.id(),
-                ));
+                return Err(MCValidationError::MissingIONodeComponentOrder(ion.logic.id));
             }
 
             // check node ids aren't higher than max
@@ -180,20 +182,200 @@ impl Microcontroller {
         let mut unique = HashSet::new();
         for c in &self.components {
             // check all io component ids are unique
-            if !unique.insert(c.id()) {
-                return Err(MCValidationError::DuplicateComponentId(c.id()));
+            if !unique.insert(c.id) {
+                return Err(MCValidationError::DuplicateComponentId(c.id));
             }
 
             // check component ids aren't higher than max
-            if c.id() > self.id_counter {
+            if c.id > self.id_counter {
                 return Err(MCValidationError::NodeIdTooHigh {
-                    found_id: c.id(),
+                    found_id: c.id,
                     max: self.id_counter,
                 });
             }
         }
 
         Ok(())
+    }
+
+    /// Access the list of [`IONode`]s.
+    ///
+    /// The actual list is kept private so that the [`Microcontroller`] has full control over ids.
+    #[allow(clippy::must_use_candidate)]
+    pub fn io_nodes(&self) -> &[IONode] {
+        &self.io
+    }
+
+    /// Mutably access the list of [`IONode`]s.
+    ///
+    /// The actual list is kept private so that the [`Microcontroller`] has full control over ids.
+    pub fn io_nodes_mut(&mut self) -> &mut [IONode] {
+        &mut self.io
+    }
+
+    /// Adds a new [`IONode`] with the given properties and returns a mutable reference to it.
+    pub fn add_io(
+        &mut self,
+        label: Option<String>,
+        description: Option<String>,
+        typ: Type,
+        mode: IONodeType,
+    ) -> &mut IONode {
+        let id_counter_node = self.id_counter_node.get_or_insert(0);
+        *id_counter_node += 1;
+        let node_id = *id_counter_node;
+
+        self.id_counter += 1;
+        let component_id = self.id_counter;
+
+        self.io.push(IONode {
+            design: IONodeDesign {
+                node_id,
+                label: label.unwrap_or_else(|| "Input".into()),
+                description: description
+                    .unwrap_or_else(|| "The input signal to be processed.".into()),
+                typ,
+                mode,
+                position: PositionXY { x: 0.0, y: 0.0 },
+            },
+            logic: {
+                #[allow(clippy::wildcard_in_or_patterns)]
+                BridgeComponentWithId {
+                    id: component_id,
+                    component: match (typ, mode) {
+                        (Type::OnOff, IONodeType::Input) => BridgeComponent::OnOffIn {
+                            pos: PositionXY { x: 0.0, y: 0.0 },
+                            unused_input: None,
+                            output: None,
+                        },
+                        (Type::Composite, IONodeType::Input) => BridgeComponent::CompositeIn {
+                            pos: PositionXY { x: 0.0, y: 0.0 },
+                            unused_input: None,
+                            output: None,
+                        },
+                        (Type::Video, IONodeType::Input) => BridgeComponent::VideoIn {
+                            pos: PositionXY { x: 0.0, y: 0.0 },
+                            unused_input: None,
+                            output: None,
+                        },
+                        (Type::Audio, IONodeType::Input) => BridgeComponent::AudioIn {
+                            pos: PositionXY { x: 0.0, y: 0.0 },
+                            unused_input: None,
+                            output: None,
+                        },
+                        (Type::Number | _, IONodeType::Input) => BridgeComponent::NumberIn {
+                            pos: PositionXY { x: 0.0, y: 0.0 },
+                            unused_input: None,
+                            output: None,
+                        },
+                        (Type::OnOff, IONodeType::Output) => BridgeComponent::OnOffOut {
+                            pos: PositionXY { x: 0.0, y: 0.0 },
+                            input: TypedInputConnection::default(),
+                            unused_output: None,
+                        },
+                        (Type::Composite, IONodeType::Output) => BridgeComponent::CompositeOut {
+                            pos: PositionXY { x: 0.0, y: 0.0 },
+                            input: TypedInputConnection::default(),
+                            unused_output: None,
+                        },
+                        (Type::Video, IONodeType::Output) => BridgeComponent::VideoOut {
+                            pos: PositionXY { x: 0.0, y: 0.0 },
+                            input: TypedInputConnection::default(),
+                            unused_output: None,
+                        },
+                        (Type::Audio, IONodeType::Output) => BridgeComponent::AudioOut {
+                            pos: PositionXY { x: 0.0, y: 0.0 },
+                            input: TypedInputConnection::default(),
+                            unused_output: None,
+                        },
+                        (Type::Number | _, IONodeType::Output) => BridgeComponent::NumberOut {
+                            pos: PositionXY { x: 0.0, y: 0.0 },
+                            input: TypedInputConnection::default(),
+                            unused_output: None,
+                        },
+                    },
+                }
+            },
+        });
+
+        self.components_bridge_order.push(component_id);
+
+        // cannot panic since we just added an element
+        let l = self.io.len();
+        &mut self.io[l - 1]
+    }
+
+    /// Removes the [`IONode`] at the given index.
+    pub fn remove_io(&mut self, index: usize) {
+        if let Some(node_id) = self.io.get(index).map(|ion| ion.design.node_id) {
+            self.remove_io_id(node_id);
+        }
+    }
+
+    /// Removes the [`IONode`] with the given id.
+    pub fn remove_io_id(&mut self, id: u32) {
+        let ion = self.io.iter().position(|ion| ion.design.node_id == id);
+        if let Some(ion) = ion {
+            let ion = self.io.remove(ion);
+            if let Some(id_counter_node) = self.id_counter_node.as_mut() {
+                if *id_counter_node == ion.design.node_id {
+                    *id_counter_node -= 1;
+                }
+            }
+
+            self.remove_component_id(ion.logic.id);
+        }
+    }
+
+    /// Access the list of [`ComponentWithId`]s.
+    ///
+    /// The actual list is kept private so that the [`Microcontroller`] has full control over ids.
+    #[allow(clippy::must_use_candidate)]
+    pub fn components(&self) -> &[ComponentWithId] {
+        &self.components
+    }
+
+    /// Mutably access the list of [`ComponentWithId`]s.
+    ///
+    /// The actual list is kept private so that the [`Microcontroller`] has full control over ids.
+    pub fn components_mut(&mut self) -> &mut [ComponentWithId] {
+        &mut self.components
+    }
+
+    /// Adds a new [`ComponentWithId`] with the given properties and returns a mutable reference to it.
+    pub fn add_component(&mut self, component: Component) -> &mut ComponentWithId {
+        self.id_counter += 1;
+        let component_id = self.id_counter;
+
+        self.components
+            .push(ComponentWithId { id: component_id, component });
+
+        // cannot panic since we just added an element
+        let l = self.components.len();
+        &mut self.components[l - 1]
+    }
+
+    /// Removes the [`ComponentWithId`] at the given index.
+    pub fn remove_component(&mut self, index: usize) -> Option<Component> {
+        if let Some(component_id) = self.components.get(index).map(|c| c.id) {
+            self.remove_component_id(component_id)
+        } else {
+            None
+        }
+    }
+
+    /// Removes the [`ComponentWithId`] with the given id.
+    pub fn remove_component_id(&mut self, id: u32) -> Option<Component> {
+        let c = self.components.iter().position(|c| c.id == id);
+        if let Some(cidx) = c {
+            let c = self.components.remove(cidx);
+            if self.id_counter == c.id {
+                self.id_counter -= 1;
+            }
+            Some(c.component)
+        } else {
+            None
+        }
     }
 }
 
@@ -215,7 +397,15 @@ pub struct IONode {
     /// Design/schematic part of the node
     pub design: IONodeDesign,
     /// Logic part of the node
-    pub logic: BridgeComponent,
+    pub logic: BridgeComponentWithId,
+}
+
+impl IONode {
+    /// Gets the node id of this [`IONode`].
+    #[allow(clippy::must_use_candidate)]
+    pub fn get_id(&self) -> u32 {
+        self.design.node_id
+    }
 }
 
 /// Design/schematic part of an [`IONode`]

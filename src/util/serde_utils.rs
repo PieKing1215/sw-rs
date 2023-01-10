@@ -3,7 +3,7 @@
 use fakemap::FakeMap;
 use serde::{Deserialize, Serialize};
 
-use crate::mc_serde::is_default;
+use crate::{components::de_from_str, mc_serde::is_default};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(untagged)]
@@ -33,10 +33,20 @@ impl RecursiveStringMap {
 #[serde(rename = "node")]
 pub struct PositionXY {
     /// X position.
-    #[serde(rename = "@x", default, skip_serializing_if = "is_default")]
+    #[serde(
+        rename = "@x",
+        default,
+        skip_serializing_if = "is_default",
+        deserialize_with = "de_from_str"
+    )]
     pub x: f32,
     /// Y position.
-    #[serde(rename = "@y", default, skip_serializing_if = "is_default")]
+    #[serde(
+        rename = "@y",
+        default,
+        skip_serializing_if = "is_default",
+        deserialize_with = "de_from_str"
+    )]
     pub y: f32,
 }
 

@@ -20,7 +20,7 @@ use mc_serde::microcontroller::{IONodeType, MicrocontrollerSerDe};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use types::Type;
-use util::serde_utils::PositionXY;
+use util::{serde_utils::PositionXY, AnyComponentMut, AnyComponentRef};
 
 /// High level representation of a microcontroller.
 ///
@@ -324,28 +324,47 @@ impl Microcontroller {
     /// Access the list of [`Component`]s.
     ///
     /// The actual list is kept private so that the [`Microcontroller`] has full control over ids.
-    #[allow(clippy::must_use_candidate)]
-    pub fn components(&self) -> &[Component] {
-        &self.components
+    #[must_use]
+    pub fn components(&self) -> Box<dyn Iterator<Item = AnyComponentRef> + '_> {
+        Box::new(
+            self.components
+                .iter()
+                .map(AnyComponentRef::Component)
+                .chain(
+                    self.io
+                        .iter()
+                        .map(|ion| AnyComponentRef::BridgeComponent(&ion.logic)),
+                ),
+        )
     }
 
     /// Mutably access the list of [`Component`]s.
     ///
     /// The actual list is kept private so that the [`Microcontroller`] has full control over ids.
-    pub fn components_mut(&mut self) -> &mut [Component] {
-        &mut self.components
+    #[must_use]
+    pub fn components_mut(&mut self) -> Box<dyn Iterator<Item = AnyComponentMut> + '_> {
+        Box::new(
+            self.components
+                .iter_mut()
+                .map(AnyComponentMut::Component)
+                .chain(
+                    self.io
+                        .iter_mut()
+                        .map(|ion| AnyComponentMut::BridgeComponent(&mut ion.logic)),
+                ),
+        )
     }
 
     /// Find a [`Component`] by its id.
     #[allow(clippy::must_use_candidate)]
-    pub fn get_component(&self, id: u32) -> Option<&Component> {
-        self.components.iter().find(|c| c.id == id)
+    pub fn get_component(&self, id: u32) -> Option<AnyComponentRef> {
+        self.components().find(|c| c.id() == id)
     }
 
     /// Find a [`Component`] by its id.
     #[allow(clippy::must_use_candidate)]
-    pub fn get_component_mut(&mut self, id: u32) -> Option<&mut Component> {
-        self.components.iter_mut().find(|c| c.id == id)
+    pub fn get_component_mut(&mut self, id: u32) -> Option<AnyComponentMut> {
+        self.components_mut().find(|c| c.id() == id)
     }
 
     /// Find a [`Component`] by its id.
@@ -355,19 +374,13 @@ impl Microcontroller {
         src: &ComponentConnection,
     ) -> Option<&mut Option<ComponentConnection>> {
         let c = self
-            .components
-            .iter_mut()
-            .find(|c| c.id == src.component_id)
-            .map(|c| c.component.inputs_mut())
-            .or_else(|| {
-                self.io
-                    .iter_mut()
-                    .find(|c| c.logic.id == src.component_id)
-                    .map(|io| io.logic.component.inputs_mut())
-            });
+            .get_component_mut(src.component_id)
+            .map(AnyComponentMut::into_inputs_mut);
+
         if let Some(mut c) = c {
             if (src.node_index as usize) < c.len() {
-                Some(c.remove(src.node_index as usize))
+                let cc = c.remove(src.node_index as usize);
+                Some(cc)
             } else {
                 None
             }

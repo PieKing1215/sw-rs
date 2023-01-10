@@ -13,7 +13,8 @@ pub mod util;
 use std::collections::HashSet;
 
 use components::{
-    BridgeComponent, BridgeComponentType, Component, ComponentType, TypedInputConnection,
+    BridgeComponent, BridgeComponentType, Component, ComponentConnection, ComponentType,
+    TypedInputConnection,
 };
 use mc_serde::microcontroller::{IONodeType, MicrocontrollerSerDe};
 use serde::{Deserialize, Serialize};
@@ -315,7 +316,7 @@ impl Microcontroller {
         }
     }
 
-    /// Access the list of [`ComponentWithId`]s.
+    /// Access the list of [`Component`]s.
     ///
     /// The actual list is kept private so that the [`Microcontroller`] has full control over ids.
     #[allow(clippy::must_use_candidate)]
@@ -323,14 +324,26 @@ impl Microcontroller {
         &self.components
     }
 
-    /// Mutably access the list of [`ComponentWithId`]s.
+    /// Mutably access the list of [`Component`]s.
     ///
     /// The actual list is kept private so that the [`Microcontroller`] has full control over ids.
     pub fn components_mut(&mut self) -> &mut [Component] {
         &mut self.components
     }
 
-    /// Adds a new [`ComponentWithId`] with the given properties and returns a mutable reference to it.
+    /// Find a [`Component`] by its id.
+    #[allow(clippy::must_use_candidate)]
+    pub fn get_component(&self, id: u32) -> Option<&Component> {
+        self.components.iter().find(|c| c.id == id)
+    }
+
+    /// Find a [`Component`] by its id.
+    #[allow(clippy::must_use_candidate)]
+    pub fn get_component_mut(&mut self, id: u32) -> Option<&mut Component> {
+        self.components.iter_mut().find(|c| c.id == id)
+    }
+
+    /// Adds a new [`Component`] with the given properties and returns a mutable reference to it.
     pub fn add_component(&mut self, component: ComponentType) -> &mut Component {
         self.id_counter += 1;
         let component_id = self.id_counter;
@@ -346,7 +359,7 @@ impl Microcontroller {
         &mut self.components[l - 1]
     }
 
-    /// Removes the [`ComponentWithId`] at the given index.
+    /// Removes the [`Component`] at the given index.
     pub fn remove_component(&mut self, index: usize) -> Option<ComponentType> {
         if let Some(component_id) = self.components.get(index).map(|c| c.id) {
             self.remove_component_id(component_id)
@@ -355,7 +368,7 @@ impl Microcontroller {
         }
     }
 
-    /// Removes the [`ComponentWithId`] with the given id.
+    /// Removes the [`Component`] with the given id.
     pub fn remove_component_id(&mut self, id: u32) -> Option<ComponentType> {
         let c = self.components.iter().position(|c| c.id == id);
         if let Some(cidx) = c {
@@ -367,6 +380,23 @@ impl Microcontroller {
         } else {
             None
         }
+    }
+
+    /// Connects two [`ComponentConnection`]s together, if possible.
+    ///
+    /// Returns `true` if successful, `false` if not.
+    // TODO: better return type
+    pub fn connect(&mut self, src: &ComponentConnection, dst: &ComponentConnection) -> bool {
+        let o = self.get_component_mut(dst.component_id);
+
+        if let Some(o) = o {
+            if let Some(input) = o.component.inputs_mut().get_mut(dst.node_index as usize) {
+                **input = Some(src.clone());
+                return true;
+            }
+        }
+
+        false
     }
 }
 

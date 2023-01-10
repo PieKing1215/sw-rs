@@ -36,7 +36,7 @@ fn main() {
 
     println!("{out}");
 
-    // let component = ComponentWithId {
+    // let component = Component {
     //     id: 1,
     //     component: ComponentType::CompositeReadOnOff {
     //         pos: PositionXY { x: 1.1, y: 2.0 },
@@ -54,7 +54,7 @@ fn main() {
     //         deserialize_with = "sw_mc::components::component_deserialize",
     //         serialize_with = "sw_mc::components::component_serialize"
     //     )]
-    //     c: ComponentWithId,
+    //     c: Component,
     // }
 
     // let v = R { c: component };

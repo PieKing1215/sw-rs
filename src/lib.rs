@@ -343,6 +343,34 @@ impl Microcontroller {
         self.components.iter_mut().find(|c| c.id == id)
     }
 
+    /// Find a [`Component`] by its id.
+    #[allow(clippy::must_use_candidate)]
+    pub fn get_connection_mut<'a>(
+        &'a mut self,
+        src: &ComponentConnection,
+    ) -> Option<&mut Option<ComponentConnection>> {
+        let c = self
+            .components
+            .iter_mut()
+            .find(|c| c.id == src.component_id)
+            .map(|c| c.component.inputs_mut())
+            .or_else(|| {
+                self.io
+                    .iter_mut()
+                    .find(|c| c.logic.id == src.component_id)
+                    .map(|io| io.logic.component.inputs_mut())
+            });
+        if let Some(mut c) = c {
+            if (src.node_index as usize) < c.len() {
+                Some(c.remove(src.node_index as usize))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
     /// Adds a new [`Component`] with the given properties and returns a mutable reference to it.
     pub fn add_component(&mut self, component: ComponentType) -> &mut Component {
         self.id_counter += 1;

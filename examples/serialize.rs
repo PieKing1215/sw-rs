@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sw_mc::{
-    components::{Component, TypedInputConnection},
+    components::{ComponentType, TypedInputConnection},
     util::serde_utils::PositionXY,
     Microcontroller,
 };
@@ -8,11 +8,11 @@ use sw_mc::{
 fn main() {
     #[derive(Serialize, Deserialize, Debug)]
     struct W {
-        c: Component,
+        c: ComponentType,
     }
 
     let p: W = W {
-        c: Component::CompositeReadOnOff {
+        c: ComponentType::CompositeReadOnOff {
             pos: PositionXY { x: 1.0, y: 2.0 },
             composite: Some(TypedInputConnection::new(2, 0)),
             variable_channel: Some(TypedInputConnection::empty()),
@@ -40,7 +40,7 @@ fn main() {
 
     // let component = ComponentWithId {
     //     id: 1,
-    //     component: Component::CompositeReadOnOff {
+    //     component: ComponentType::CompositeReadOnOff {
     //         pos: PositionXY { x: 1.1, y: 2.0 },
     //         composite: Some(TypedInputConnection::new(2, 0)),
     //         variable_channel: Some(TypedInputConnection::empty()),

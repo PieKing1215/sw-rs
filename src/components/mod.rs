@@ -186,16 +186,16 @@ impl<T: CompileType> core::fmt::Debug for TypedOutputConnection<T> {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct _ComponentDe {
+struct _ComponentTypeDe {
     #[serde(flatten)]
     inner: FakeMap<String, RecursiveStringMap>,
 }
 
-impl From<_ComponentDe> for ComponentWithId {
-    fn from(de: _ComponentDe) -> Self {
+impl From<_ComponentTypeDe> for Component {
+    fn from(de: _ComponentTypeDe) -> Self {
         #[derive(Serialize, Deserialize, Debug)]
         struct W {
-            object: _ComponentDe,
+            object: _ComponentTypeDe,
         }
 
         let db = format!("{de:?}");
@@ -205,7 +205,7 @@ impl From<_ComponentDe> for ComponentWithId {
         let ser = W { object: de }.serialize(se).unwrap();
         let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
-        let de: ComponentWithId = quick_xml::de::from_str(ser)
+        let de: Component = quick_xml::de::from_str(ser)
             .expect(&format!("Deserializing component:\n{db}\n{ser}\n"));
 
         de
@@ -213,16 +213,16 @@ impl From<_ComponentDe> for ComponentWithId {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct _BridgeComponentDe {
+struct _BridgeComponentTypeDe {
     #[serde(flatten)]
     inner: FakeMap<String, RecursiveStringMap>,
 }
 
-impl From<_BridgeComponentDe> for BridgeComponentWithId {
-    fn from(de: _BridgeComponentDe) -> Self {
+impl From<_BridgeComponentTypeDe> for BridgeComponent {
+    fn from(de: _BridgeComponentTypeDe) -> Self {
         #[derive(Serialize, Deserialize, Debug)]
         struct W {
-            object: _BridgeComponentDe,
+            object: _BridgeComponentTypeDe,
         }
 
         let db = format!("{de:?}");
@@ -232,7 +232,7 @@ impl From<_BridgeComponentDe> for BridgeComponentWithId {
         let ser = W { object: de }.serialize(se).unwrap();
         let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
-        let de: BridgeComponentWithId = quick_xml::de::from_str(ser)
+        let de: BridgeComponent = quick_xml::de::from_str(ser)
             .expect(&format!("Deserializing bridge component:\n{db}\n{ser}\n"));
 
         de
@@ -240,11 +240,11 @@ impl From<_BridgeComponentDe> for BridgeComponentWithId {
 }
 
 #[allow(dead_code)]
-pub(crate) fn component_deserialize<'de, D>(de: D) -> Result<ComponentWithId, D::Error>
+pub(crate) fn component_deserialize<'de, D>(de: D) -> Result<Component, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    let mut cde = _ComponentDe::deserialize(de)?;
+    let mut cde = _ComponentTypeDe::deserialize(de)?;
 
     if cde.inner.get("@type").is_none() {
         cde.inner
@@ -282,11 +282,11 @@ where
     Ok(cde.into())
 }
 
-pub(crate) fn components_deserialize<'de, D>(de: D) -> Result<Vec<ComponentWithId>, D::Error>
+pub(crate) fn components_deserialize<'de, D>(de: D) -> Result<Vec<Component>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    let de = Vec::<_ComponentDe>::deserialize(de)?;
+    let de = Vec::<_ComponentTypeDe>::deserialize(de)?;
     // println!("{de:?}");
     let cs = de
         .into_iter()
@@ -333,7 +333,7 @@ where
 
 #[allow(dead_code)]
 pub(crate) fn component_serialize<S>(
-    component: &ComponentWithId,
+    component: &Component,
     serializer: S,
 ) -> Result<S::Ok, S::Error>
 where
@@ -341,7 +341,7 @@ where
 {
     #[derive(Serialize, Debug)]
     struct W<'a> {
-        object: &'a ComponentWithId,
+        object: &'a Component,
     }
 
     let mut se = quick_xml::se::Serializer::new(String::new());
@@ -349,7 +349,7 @@ where
     let ser = W { object: component }.serialize(se).unwrap();
     let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
-    let mut cde: _ComponentDe = quick_xml::de::from_str(ser).unwrap();
+    let mut cde: _ComponentTypeDe = quick_xml::de::from_str(ser).unwrap();
     if let Some(RecursiveStringMap::String(s)) = cde.inner.get("@type").cloned() {
         if s == "0" {
             cde.inner.remove("@type");
@@ -359,10 +359,7 @@ where
     cde.serialize(serializer)
 }
 
-pub(crate) fn components_serialize<S>(
-    components: &[ComponentWithId],
-    ser: S,
-) -> Result<S::Ok, S::Error>
+pub(crate) fn components_serialize<S>(components: &[Component], ser: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {
@@ -371,7 +368,7 @@ where
         .map(|c| {
             #[derive(Serialize, Debug)]
             struct W<'a> {
-                object: &'a ComponentWithId,
+                object: &'a Component,
             }
 
             let mut se = quick_xml::se::Serializer::new(String::new());
@@ -379,7 +376,7 @@ where
             let ser = W { object: c }.serialize(se).unwrap();
             let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
-            let mut cde: _ComponentDe = quick_xml::de::from_str(ser).unwrap();
+            let mut cde: _ComponentTypeDe = quick_xml::de::from_str(ser).unwrap();
             if let Some(RecursiveStringMap::String(s)) = cde.inner.get("@type").cloned() {
                 if s == "0" {
                     cde.inner.remove("@type");
@@ -429,7 +426,7 @@ macro_rules! components {
             }
 
             impl $type {
-                /// Generates a [`ComponentIODef`] for this [`Component`].
+                /// Generates a [`ComponentIODef`] for this [`ComponentType`].
                 #[must_use]
                 pub fn io_def(&self) -> ComponentIODef {
                     match self {
@@ -442,7 +439,7 @@ macro_rules! components {
                     }
                 }
 
-                /// Returns an immutable list of the input connections for this [`Component`].
+                /// Returns an immutable list of the input connections for this [`ComponentType`].
                 #[must_use]
                 pub fn inputs(&self) -> Vec<Option<&ComponentConnection>> {
                     match self {
@@ -455,7 +452,7 @@ macro_rules! components {
                     }
                 }
 
-                /// Returns a mutable list of the input connections for this [`Component`].
+                /// Returns a mutable list of the input connections for this [`ComponentType`].
                 #[must_use]
                 pub fn inputs_mut(&mut self) -> Vec<Option<&mut ComponentConnection>> {
                     match self {
@@ -468,7 +465,7 @@ macro_rules! components {
                     }
                 }
 
-                /// Immutably borrows the position of this [`Component`].
+                /// Immutably borrows the position of this [`ComponentType`].
                 #[must_use]
                 pub fn position(&self) -> &PositionXY {
                     match self {
@@ -478,7 +475,7 @@ macro_rules! components {
                     }
                 }
 
-                /// Mutably borrows the position of this [`Component`].
+                /// Mutably borrows the position of this [`ComponentType`].
                 #[must_use]
                 pub fn position_mut(&mut self) -> &mut PositionXY {
                     match self {
@@ -541,7 +538,7 @@ impl TextValue {
 
 /// Struct representing a dropdown item with a label and value.
 ///
-/// Used in [`Component::PropertyDropdown`].
+/// Used in [`ComponentType::PropertyDropdown`].
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename = "i")]
 pub struct DropdownItem {
@@ -627,7 +624,7 @@ str_def_fns!("on");
 str_def_fns!("off");
 str_def_fns!("number");
 
-components! { Component,
+components! { ComponentType,
     0 = NOT[input(1): OnOff][out(1): OnOff]{},
     1 = AND[input_a(1): OnOff, input_b(2): OnOff][out(1): OnOff]{},
     2 = OR[input_a(1): OnOff, input_b(2): OnOff][out(1): OnOff]{},
@@ -899,9 +896,9 @@ components! { Component,
     },
     59 = AudioSwitchbox[on(1): Audio, off(2): Audio, switch(3): OnOff][out(1): Audio]{},
     {
-        |c: &Component, de: &mut FakeMap<String, RecursiveStringMap>| {
+        |c: &ComponentType, de: &mut FakeMap<String, RecursiveStringMap>| {
             // see note on NumericalJunction
-            if matches!(c, Component::NumericalJunction { .. }) {
+            if matches!(c, ComponentType::NumericalJunction { .. }) {
                 // FakeMap has no get_mut
                 if let Some(RecursiveStringMap::Map(mut o)) = de.remove("object") {
                     o.remove("out2");
@@ -913,7 +910,7 @@ components! { Component,
 
             // map in1,in2,in3,etc. to inc,in1,in2,etc.
             // see note on CompositeWriteNum/CompositeWriteOnOff
-            if let Component::CompositeWriteNum { count, offset, .. } | Component::CompositeWriteOnOff { count, offset, .. } = c {
+            if let ComponentType::CompositeWriteNum { count, offset, .. } | ComponentType::CompositeWriteOnOff { count, offset, .. } = c {
                 if let Some(RecursiveStringMap::Map(mut o)) = de.remove("object") {
                     for (k, _) in o.iter_mut() {
                         if *k == "in1" {
@@ -943,7 +940,7 @@ components! { Component,
             }
 
             // remove in2 if channel is constant
-            if let Component::CompositeReadNum { channel, .. } | Component::CompositeReadOnOff { channel, .. } = c {
+            if let ComponentType::CompositeReadNum { channel, .. } | ComponentType::CompositeReadOnOff { channel, .. } = c {
                 if let Some(RecursiveStringMap::Map(mut o)) = de.remove("object") {
                     if *channel == -1 {
                         // for some reason, in these nodes in2 is supposed to go after out1
@@ -960,7 +957,7 @@ components! { Component,
     }
 }
 
-components! { BridgeComponent,
+components! { BridgeComponentType,
     0 = OnOffIn[][]{
         #[serde(rename = "in1", default, skip_serializing_if = "is_default")]
         unused_input: Option<TypedInputConnection<crate::types::TOnOff, false>>,
@@ -1022,17 +1019,15 @@ components! { BridgeComponent,
         unused_output: Option<TypedOutputConnection<crate::types::TAudio>>,
     },
     {
-        |_c: &BridgeComponent, _de: &mut FakeMap<String, RecursiveStringMap>| {}
+        |_c: &BridgeComponentType, _de: &mut FakeMap<String, RecursiveStringMap>| {}
     }
 }
 
-pub(crate) fn bridge_components_deserialize<'de, D>(
-    de: D,
-) -> Result<Vec<BridgeComponentWithId>, D::Error>
+pub(crate) fn bridge_components_deserialize<'de, D>(de: D) -> Result<Vec<BridgeComponent>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    let de = Vec::<_BridgeComponentDe>::deserialize(de)?;
+    let de = Vec::<_BridgeComponentTypeDe>::deserialize(de)?;
     // println!("{de:?}");
     let cs = de
         .into_iter()
@@ -1050,7 +1045,7 @@ where
 }
 
 pub(crate) fn bridge_components_serialize<S>(
-    components: &[BridgeComponentWithId],
+    components: &[BridgeComponent],
     ser: S,
 ) -> Result<S::Ok, S::Error>
 where
@@ -1061,7 +1056,7 @@ where
         .map(|c| {
             #[derive(Serialize, Debug)]
             struct W<'a> {
-                object: &'a BridgeComponentWithId,
+                object: &'a BridgeComponent,
             }
 
             let mut se = quick_xml::se::Serializer::new(String::new());
@@ -1069,7 +1064,7 @@ where
             let ser = W { object: c }.serialize(se).unwrap();
             let ser = ser.trim_start_matches("<W>").trim_end_matches("</W>");
 
-            let mut cde: _ComponentDe = quick_xml::de::from_str(ser).unwrap();
+            let mut cde: _ComponentTypeDe = quick_xml::de::from_str(ser).unwrap();
             if let Some(RecursiveStringMap::String(s)) = cde.inner.get("@type").cloned() {
                 if s == "0" {
                     cde.inner.remove("@type");
@@ -1083,18 +1078,18 @@ where
     ser.collect_seq(cdes.iter())
 }
 
-/// Component with its id.
+/// [`ComponentType`] with an id.
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(from = "_ComponentWithIdDe", into = "_ComponentWithIdDe")]
-pub struct ComponentWithId {
+#[serde(from = "_ComponentDe", into = "_ComponentDe")]
+pub struct Component {
     #[serde(rename = "@id")]
     pub(crate) id: u32,
-    /// The [`Component`].
+    /// The [`ComponentType`].
     #[serde(flatten)]
-    pub component: Component,
+    pub component: ComponentType,
 }
 
-impl ComponentWithId {
+impl Component {
     /// Gets the id for this component.
     ///
     /// The id is managed by the [`Microcontroller`].
@@ -1119,16 +1114,16 @@ impl ComponentWithId {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct _ComponentWithIdDe {
+struct _ComponentDe {
     #[serde(flatten)]
     inner: FakeMap<String, RecursiveStringMap>,
 }
 
-impl From<_ComponentWithIdDe> for ComponentWithId {
-    fn from(mut de: _ComponentWithIdDe) -> Self {
+impl From<_ComponentDe> for Component {
+    fn from(mut de: _ComponentDe) -> Self {
         #[derive(Serialize, Deserialize, Debug)]
         struct W {
-            c: _ComponentWithIdDe,
+            c: _ComponentDe,
         }
 
         #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -1137,7 +1132,7 @@ impl From<_ComponentWithIdDe> for ComponentWithId {
             #[serde(rename = "@id")]
             pub id: u32,
             #[serde(flatten)]
-            pub component: Box<Component>,
+            pub component: Box<ComponentType>,
         }
 
         if let Some(RecursiveStringMap::Map(mut o)) = de.inner.remove("object") {
@@ -1162,12 +1157,12 @@ impl From<_ComponentWithIdDe> for ComponentWithId {
 
         // println!("don {de:?}");
 
-        ComponentWithId { id: de.id, component: *de.component }
+        Component { id: de.id, component: *de.component }
     }
 }
 
-impl From<ComponentWithId> for _ComponentWithIdDe {
-    fn from(c: ComponentWithId) -> Self {
+impl From<Component> for _ComponentDe {
+    fn from(c: Component) -> Self {
         let mut m = c.ser_to_map();
 
         if let Some(RecursiveStringMap::Map(mut o)) = m.remove("object") {
@@ -1176,24 +1171,24 @@ impl From<ComponentWithId> for _ComponentWithIdDe {
             m.insert("object".into(), RecursiveStringMap::Map(o));
         }
 
-        let de: _ComponentWithIdDe = _ComponentWithIdDe { inner: m };
+        let de: _ComponentDe = _ComponentDe { inner: m };
 
         de
     }
 }
 
-/// Component with its id.
+/// [`BridgeComponentType`] with an id.
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[serde(from = "_BridgeComponentWithIdDe", into = "_BridgeComponentWithIdDe")]
-pub struct BridgeComponentWithId {
+#[serde(from = "_BridgeComponentDe", into = "_BridgeComponentDe")]
+pub struct BridgeComponent {
     #[serde(rename = "@id")]
     pub(crate) id: u32,
-    /// The [`Component`].
+    /// The [`BridgeComponentType`].
     #[serde(flatten)]
-    pub component: BridgeComponent,
+    pub component: BridgeComponentType,
 }
 
-impl BridgeComponentWithId {
+impl BridgeComponent {
     /// Gets the id for this component.
     ///
     /// The id is managed by the [`Microcontroller`].
@@ -1218,16 +1213,16 @@ impl BridgeComponentWithId {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct _BridgeComponentWithIdDe {
+struct _BridgeComponentDe {
     #[serde(flatten)]
     inner: FakeMap<String, RecursiveStringMap>,
 }
 
-impl From<_BridgeComponentWithIdDe> for BridgeComponentWithId {
-    fn from(mut de: _BridgeComponentWithIdDe) -> Self {
+impl From<_BridgeComponentDe> for BridgeComponent {
+    fn from(mut de: _BridgeComponentDe) -> Self {
         #[derive(Serialize, Deserialize, Debug)]
         struct W {
-            object: _BridgeComponentWithIdDe,
+            object: _BridgeComponentDe,
         }
 
         #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -1235,7 +1230,7 @@ impl From<_BridgeComponentWithIdDe> for BridgeComponentWithId {
             #[serde(rename = "@id")]
             pub id: u32,
             #[serde(flatten)]
-            pub component: BridgeComponent,
+            pub component: BridgeComponentType,
         }
 
         if let Some(RecursiveStringMap::Map(mut o)) = de.inner.remove("object") {
@@ -1256,12 +1251,12 @@ impl From<_BridgeComponentWithIdDe> for BridgeComponentWithId {
         let de: _RawBridgeComponentWithId = quick_xml::de::from_str(ser)
             .expect(&format!("Deserializing component:\n{db}\n{ser}\n"));
 
-        BridgeComponentWithId { id: de.id, component: de.component }
+        BridgeComponent { id: de.id, component: de.component }
     }
 }
 
-impl From<BridgeComponentWithId> for _BridgeComponentWithIdDe {
-    fn from(c: BridgeComponentWithId) -> Self {
+impl From<BridgeComponent> for _BridgeComponentDe {
+    fn from(c: BridgeComponent) -> Self {
         let mut m = c.ser_to_map();
 
         if let Some(RecursiveStringMap::Map(mut o)) = m.remove("object") {
@@ -1270,7 +1265,7 @@ impl From<BridgeComponentWithId> for _BridgeComponentWithIdDe {
             m.insert("object".into(), RecursiveStringMap::Map(o));
         }
 
-        let de: _BridgeComponentWithIdDe = _BridgeComponentWithIdDe { inner: m };
+        let de: _BridgeComponentDe = _BridgeComponentDe { inner: m };
 
         de
     }

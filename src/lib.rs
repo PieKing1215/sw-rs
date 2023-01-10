@@ -13,7 +13,7 @@ pub mod util;
 use std::collections::HashSet;
 
 use components::{
-    BridgeComponent, BridgeComponentWithId, Component, ComponentWithId, TypedInputConnection,
+    BridgeComponent, BridgeComponentType, Component, ComponentType, TypedInputConnection,
 };
 use mc_serde::microcontroller::{IONodeType, MicrocontrollerSerDe};
 use serde::{Deserialize, Serialize};
@@ -64,7 +64,7 @@ pub struct Microcontroller {
     /// The main components (IO nodes are in [`io`][`Self::io`]).
     ///
     /// Needs to be private so we can manage ids
-    components: Vec<ComponentWithId>,
+    components: Vec<Component>,
 }
 
 #[allow(missing_docs)]
@@ -240,55 +240,57 @@ impl Microcontroller {
             },
             logic: {
                 #[allow(clippy::wildcard_in_or_patterns)]
-                BridgeComponentWithId {
+                BridgeComponent {
                     id: component_id,
                     component: match (typ, mode) {
-                        (Type::OnOff, IONodeType::Input) => BridgeComponent::OnOffIn {
+                        (Type::OnOff, IONodeType::Input) => BridgeComponentType::OnOffIn {
                             pos: PositionXY { x: 0.0, y: 0.0 },
                             unused_input: None,
                             output: None,
                         },
-                        (Type::Composite, IONodeType::Input) => BridgeComponent::CompositeIn {
+                        (Type::Composite, IONodeType::Input) => BridgeComponentType::CompositeIn {
                             pos: PositionXY { x: 0.0, y: 0.0 },
                             unused_input: None,
                             output: None,
                         },
-                        (Type::Video, IONodeType::Input) => BridgeComponent::VideoIn {
+                        (Type::Video, IONodeType::Input) => BridgeComponentType::VideoIn {
                             pos: PositionXY { x: 0.0, y: 0.0 },
                             unused_input: None,
                             output: None,
                         },
-                        (Type::Audio, IONodeType::Input) => BridgeComponent::AudioIn {
+                        (Type::Audio, IONodeType::Input) => BridgeComponentType::AudioIn {
                             pos: PositionXY { x: 0.0, y: 0.0 },
                             unused_input: None,
                             output: None,
                         },
-                        (Type::Number | _, IONodeType::Input) => BridgeComponent::NumberIn {
+                        (Type::Number | _, IONodeType::Input) => BridgeComponentType::NumberIn {
                             pos: PositionXY { x: 0.0, y: 0.0 },
                             unused_input: None,
                             output: None,
                         },
-                        (Type::OnOff, IONodeType::Output) => BridgeComponent::OnOffOut {
+                        (Type::OnOff, IONodeType::Output) => BridgeComponentType::OnOffOut {
                             pos: PositionXY { x: 0.0, y: 0.0 },
                             input: TypedInputConnection::default(),
                             unused_output: None,
                         },
-                        (Type::Composite, IONodeType::Output) => BridgeComponent::CompositeOut {
+                        (Type::Composite, IONodeType::Output) => {
+                            BridgeComponentType::CompositeOut {
+                                pos: PositionXY { x: 0.0, y: 0.0 },
+                                input: TypedInputConnection::default(),
+                                unused_output: None,
+                            }
+                        },
+                        (Type::Video, IONodeType::Output) => BridgeComponentType::VideoOut {
                             pos: PositionXY { x: 0.0, y: 0.0 },
                             input: TypedInputConnection::default(),
                             unused_output: None,
                         },
-                        (Type::Video, IONodeType::Output) => BridgeComponent::VideoOut {
+                        (Type::Audio, IONodeType::Output) => BridgeComponentType::AudioOut {
                             pos: PositionXY { x: 0.0, y: 0.0 },
                             input: TypedInputConnection::default(),
                             unused_output: None,
                         },
-                        (Type::Audio, IONodeType::Output) => BridgeComponent::AudioOut {
-                            pos: PositionXY { x: 0.0, y: 0.0 },
-                            input: TypedInputConnection::default(),
-                            unused_output: None,
-                        },
-                        (Type::Number | _, IONodeType::Output) => BridgeComponent::NumberOut {
+                        (Type::Number | _, IONodeType::Output) => BridgeComponentType::NumberOut {
                             pos: PositionXY { x: 0.0, y: 0.0 },
                             input: TypedInputConnection::default(),
                             unused_output: None,
@@ -331,24 +333,24 @@ impl Microcontroller {
     ///
     /// The actual list is kept private so that the [`Microcontroller`] has full control over ids.
     #[allow(clippy::must_use_candidate)]
-    pub fn components(&self) -> &[ComponentWithId] {
+    pub fn components(&self) -> &[Component] {
         &self.components
     }
 
     /// Mutably access the list of [`ComponentWithId`]s.
     ///
     /// The actual list is kept private so that the [`Microcontroller`] has full control over ids.
-    pub fn components_mut(&mut self) -> &mut [ComponentWithId] {
+    pub fn components_mut(&mut self) -> &mut [Component] {
         &mut self.components
     }
 
     /// Adds a new [`ComponentWithId`] with the given properties and returns a mutable reference to it.
-    pub fn add_component(&mut self, component: Component) -> &mut ComponentWithId {
+    pub fn add_component(&mut self, component: ComponentType) -> &mut Component {
         self.id_counter += 1;
         let component_id = self.id_counter;
 
         self.components
-            .push(ComponentWithId { id: component_id, component });
+            .push(Component { id: component_id, component });
 
         // cannot panic since we just added an element
         let l = self.components.len();
@@ -356,7 +358,7 @@ impl Microcontroller {
     }
 
     /// Removes the [`ComponentWithId`] at the given index.
-    pub fn remove_component(&mut self, index: usize) -> Option<Component> {
+    pub fn remove_component(&mut self, index: usize) -> Option<ComponentType> {
         if let Some(component_id) = self.components.get(index).map(|c| c.id) {
             self.remove_component_id(component_id)
         } else {
@@ -365,7 +367,7 @@ impl Microcontroller {
     }
 
     /// Removes the [`ComponentWithId`] with the given id.
-    pub fn remove_component_id(&mut self, id: u32) -> Option<Component> {
+    pub fn remove_component_id(&mut self, id: u32) -> Option<ComponentType> {
         let c = self.components.iter().position(|c| c.id == id);
         if let Some(cidx) = c {
             let c = self.components.remove(cidx);
@@ -397,7 +399,7 @@ pub struct IONode {
     /// Design/schematic part of the node
     pub design: IONodeDesign,
     /// Logic part of the node
-    pub logic: BridgeComponentWithId,
+    pub logic: BridgeComponent,
 }
 
 impl IONode {

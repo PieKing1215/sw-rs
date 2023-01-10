@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
 use crate::{
-    components::{BridgeComponentWithId, ComponentWithId},
+    components::{BridgeComponent, Component},
     types::Type,
     util::serde_utils::{PositionXZ, RecursiveStringMap},
 };
@@ -155,7 +155,7 @@ pub(crate) struct Components {
         deserialize_with = "crate::components::components_deserialize",
         serialize_with = "crate::components::components_serialize"
     )]
-    pub components: Vec<ComponentWithId>,
+    pub components: Vec<Component>,
 }
 
 #[derive(Serialize, Deserialize, Default, Debug)]
@@ -167,7 +167,7 @@ pub(crate) struct ComponentsBridge {
         deserialize_with = "crate::components::bridge_components_deserialize",
         serialize_with = "crate::components::bridge_components_serialize"
     )]
-    pub components_bridge: Vec<BridgeComponentWithId>,
+    pub components_bridge: Vec<BridgeComponent>,
 }
 
 #[derive(Serialize_repr, Deserialize_repr, Default, Clone, Copy, PartialEq, Eq, Debug)]

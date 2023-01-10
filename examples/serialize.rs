@@ -12,8 +12,8 @@ fn main() {
 
     let p: W = W {
         c: ComponentType::CompositeReadOnOff {
-            composite: Some(TypedInputConnection::new(2, 0)),
-            variable_channel: Some(TypedInputConnection::empty()),
+            composite: TypedInputConnection::new(2, 0),
+            variable_channel: TypedInputConnection::empty(),
             channel: 0,
             out: Default::default(),
         },

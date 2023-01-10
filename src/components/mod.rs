@@ -120,12 +120,19 @@ impl core::fmt::Debug for ConnectionV {
     }
 }
 
+fn tru() -> bool {
+    true
+}
+
 /// Represents an input connection slot.
 #[derive(Serialize, Deserialize, Clone, Default, PartialEq, Eq)]
 pub struct TypedInputConnection<T: CompileType, const S: bool> {
     /// The actual connection.
     #[serde(flatten)]
     pub connection: Option<ComponentConnection>,
+
+    #[serde(skip, default = "tru")]
+    force_visible: bool,
 
     // some extra ser/de fields
     #[serde(rename = "@v", default, skip_serializing_if = "is_default")]
@@ -136,10 +143,17 @@ pub struct TypedInputConnection<T: CompileType, const S: bool> {
     _phantom: PhantomData<T>,
 }
 
+fn skip_typedinputconnection<T: CompileType + Default + Eq, const S: bool>(
+    t: &TypedInputConnection<T, S>,
+) -> bool {
+    is_default(t) && !t.force_visible
+}
+
 impl<T: CompileType, const S: bool> core::fmt::Debug for TypedInputConnection<T, S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TypedInputConnection")
             .field("connection", &self.connection)
+            .field("force_visible", &self.force_visible)
             .finish()
     }
 }
@@ -150,6 +164,7 @@ impl<T: CompileType, const S: bool> TypedInputConnection<T, S> {
     pub fn new(component_id: u32, node_index: u8) -> Self {
         Self {
             connection: Some(ComponentConnection { component_id, node_index }),
+            force_visible: false,
             v_attr: None,
             v: None,
             _phantom: PhantomData,
@@ -161,6 +176,7 @@ impl<T: CompileType, const S: bool> TypedInputConnection<T, S> {
     pub fn empty() -> Self {
         Self {
             connection: None,
+            force_visible: false,
             v_attr: None,
             v: None,
             _phantom: PhantomData,
@@ -171,6 +187,9 @@ impl<T: CompileType, const S: bool> TypedInputConnection<T, S> {
 /// Represents an output connection slot.
 #[derive(Serialize, Deserialize, Clone, Default, PartialEq, Eq)]
 pub struct TypedOutputConnection<T: CompileType> {
+    #[serde(skip, default = "tru")]
+    force_visible: bool,
+
     #[serde(rename = "@v", default, skip_serializing_if = "is_default")]
     v_attr: Option<String>,
     #[serde(default, skip_serializing_if = "skip_connection::<T, true>")]
@@ -179,9 +198,15 @@ pub struct TypedOutputConnection<T: CompileType> {
     _phantom: PhantomData<T>,
 }
 
+fn skip_typedoutputconnection<T: CompileType + Default + Eq>(t: &TypedOutputConnection<T>) -> bool {
+    is_default(t) && !t.force_visible
+}
+
 impl<T: CompileType> core::fmt::Debug for TypedOutputConnection<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TypedInputConnection").finish()
+        f.debug_struct("TypedInputConnection")
+            .field("force_visible", &self.force_visible)
+            .finish()
     }
 }
 
@@ -406,12 +431,12 @@ macro_rules! components {
                     #[serde(rename = "" $id "")]
                     $x {
                         $(
-                            #[serde(rename = "" [<in $idx_i>] "", default, skip_serializing_if = "is_default")]
-                            $in_id: Option<TypedInputConnection<crate::types::[<T $in>], true>>,
+                            #[serde(rename = "" [<in $idx_i>] "", default, skip_serializing_if = "skip_typedinputconnection")]
+                            $in_id: TypedInputConnection<crate::types::[<T $in>], true>,
                         )*
                         $(
-                            #[serde(rename = "" [<out $idx_o>] "", default, skip_serializing_if = "is_default")]
-                            $out_id: Option<TypedOutputConnection<crate::types::[<T $out>]>>,
+                            #[serde(rename = "" [<out $idx_o>] "", default, skip_serializing_if = "skip_typedoutputconnection")]
+                            $out_id: TypedOutputConnection<crate::types::[<T $out>]>,
                         )*
                         $($b)*
                     },
@@ -434,12 +459,12 @@ macro_rules! components {
 
                 /// Returns an immutable list of the input connections for this [`ComponentType`].
                 #[must_use]
-                pub fn inputs(&self) -> Vec<Option<&ComponentConnection>> {
+                pub fn inputs(&self) -> Vec<&Option<ComponentConnection>> {
                     match self {
                         $(
                             Self::$x {
                                 $( $in_id, )* .. } => vec![
-                                $( $in_id.as_ref().and_then(|c| c.connection.as_ref()), )*
+                                $( &$in_id.connection, )*
                             ],
                         )*
                     }
@@ -447,12 +472,12 @@ macro_rules! components {
 
                 /// Returns a mutable list of the input connections for this [`ComponentType`].
                 #[must_use]
-                pub fn inputs_mut(&mut self) -> Vec<Option<&mut ComponentConnection>> {
+                pub fn inputs_mut(&mut self) -> Vec<&mut Option<ComponentConnection>> {
                     match self {
                         $(
                             Self::$x {
                                 $( $in_id, )* .. } => vec![
-                                $( $in_id.as_mut().and_then(|c| c.connection.as_mut()), )*
+                                $( &mut $in_id.connection, )*
                             ],
                         )*
                     }

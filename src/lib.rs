@@ -14,7 +14,7 @@ use std::collections::HashSet;
 
 use components::{
     BridgeComponent, BridgeComponentType, Component, ComponentConnection, ComponentType,
-    TypedInputConnection,
+    TypedInputConnection, TypedOutputConnection,
 };
 use mc_serde::microcontroller::{IONodeType, MicrocontrollerSerDe};
 use serde::{Deserialize, Serialize};
@@ -245,42 +245,47 @@ impl Microcontroller {
                     id: component_id,
                     pos: PositionXY::default(),
                     component: match (typ, mode) {
-                        (Type::OnOff, IONodeType::Input) => {
-                            BridgeComponentType::OnOffIn { unused_input: None, output: None }
+                        (Type::OnOff, IONodeType::Input) => BridgeComponentType::OnOffIn {
+                            unused_input: TypedInputConnection::default(),
+                            output: TypedOutputConnection::default(),
                         },
-                        (Type::Composite, IONodeType::Input) => {
-                            BridgeComponentType::CompositeIn { unused_input: None, output: None }
+                        (Type::Composite, IONodeType::Input) => BridgeComponentType::CompositeIn {
+                            unused_input: TypedInputConnection::default(),
+                            output: TypedOutputConnection::default(),
                         },
-                        (Type::Video, IONodeType::Input) => {
-                            BridgeComponentType::VideoIn { unused_input: None, output: None }
+                        (Type::Video, IONodeType::Input) => BridgeComponentType::VideoIn {
+                            unused_input: TypedInputConnection::default(),
+                            output: TypedOutputConnection::default(),
                         },
-                        (Type::Audio, IONodeType::Input) => {
-                            BridgeComponentType::AudioIn { unused_input: None, output: None }
+                        (Type::Audio, IONodeType::Input) => BridgeComponentType::AudioIn {
+                            unused_input: TypedInputConnection::default(),
+                            output: TypedOutputConnection::default(),
                         },
-                        (Type::Number | _, IONodeType::Input) => {
-                            BridgeComponentType::NumberIn { unused_input: None, output: None }
+                        (Type::Number | _, IONodeType::Input) => BridgeComponentType::NumberIn {
+                            unused_input: TypedInputConnection::default(),
+                            output: TypedOutputConnection::default(),
                         },
                         (Type::OnOff, IONodeType::Output) => BridgeComponentType::OnOffOut {
                             input: TypedInputConnection::default(),
-                            unused_output: None,
+                            unused_output: TypedOutputConnection::default(),
                         },
                         (Type::Composite, IONodeType::Output) => {
                             BridgeComponentType::CompositeOut {
                                 input: TypedInputConnection::default(),
-                                unused_output: None,
+                                unused_output: TypedOutputConnection::default(),
                             }
                         },
                         (Type::Video, IONodeType::Output) => BridgeComponentType::VideoOut {
                             input: TypedInputConnection::default(),
-                            unused_output: None,
+                            unused_output: TypedOutputConnection::default(),
                         },
                         (Type::Audio, IONodeType::Output) => BridgeComponentType::AudioOut {
                             input: TypedInputConnection::default(),
-                            unused_output: None,
+                            unused_output: TypedOutputConnection::default(),
                         },
                         (Type::Number | _, IONodeType::Output) => BridgeComponentType::NumberOut {
                             input: TypedInputConnection::default(),
-                            unused_output: None,
+                            unused_output: TypedOutputConnection::default(),
                         },
                     },
                 }

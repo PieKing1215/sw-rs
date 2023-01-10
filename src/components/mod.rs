@@ -956,66 +956,16 @@ components! { ComponentType,
 }
 
 components! { BridgeComponentType,
-    0 = OnOffIn[][]{
-        #[serde(rename = "in1", default, skip_serializing_if = "is_default")]
-        unused_input: Option<TypedInputConnection<crate::types::TOnOff, false>>,
-        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
-        output: Option<TypedOutputConnection<crate::types::TOnOff>>,
-    },
-    1 = OnOffOut[][]{
-        #[serde(rename = "in1", default)]
-        input: TypedInputConnection<crate::types::TOnOff, false>,
-        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
-        unused_output: Option<TypedOutputConnection<crate::types::TOnOff>>,
-    },
-    2 = NumberIn[][]{
-        #[serde(rename = "in1", default, skip_serializing_if = "is_default")]
-        unused_input: Option<TypedInputConnection<crate::types::TNumber, false>>,
-        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
-        output: Option<TypedOutputConnection<crate::types::TNumber>>,
-    },
-    3 = NumberOut[][]{
-        #[serde(rename = "in1", default)]
-        input: TypedInputConnection<crate::types::TNumber, false>,
-        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
-        unused_output: Option<TypedOutputConnection<crate::types::TNumber>>,
-    },
-    4 = CompositeIn[][]{
-        #[serde(rename = "in1", default, skip_serializing_if = "is_default")]
-        unused_input: Option<TypedInputConnection<crate::types::TComposite, true>>,
-        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
-        output: Option<TypedOutputConnection<crate::types::TComposite>>,
-    },
-    5 = CompositeOut[][]{
-        #[serde(rename = "in1", default)]
-        input: TypedInputConnection<crate::types::TComposite, true>,
-        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
-        unused_output: Option<TypedOutputConnection<crate::types::TComposite>>,
-    },
-    6 = VideoIn[][]{
-        #[serde(rename = "in1", default, skip_serializing_if = "is_default")]
-        unused_input: Option<TypedInputConnection<crate::types::TVideo, true>>,
-        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
-        output: Option<TypedOutputConnection<crate::types::TVideo>>,
-    },
-    7 = VideoOut[][]{
-        #[serde(rename = "in1", default)]
-        input: TypedInputConnection<crate::types::TVideo, true>,
-        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
-        unused_output: Option<TypedOutputConnection<crate::types::TVideo>>,
-    },
-    8 = AudioIn[][]{
-        #[serde(rename = "in1", default, skip_serializing_if = "is_default")]
-        unused_input: Option<TypedInputConnection<crate::types::TAudio, true>>,
-        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
-        output: Option<TypedOutputConnection<crate::types::TAudio>>,
-    },
-    9 = AudioOut[][]{
-        #[serde(rename = "in1", default)]
-        input: TypedInputConnection<crate::types::TAudio, true>,
-        #[serde(rename = "out1", default, skip_serializing_if = "is_default")]
-        unused_output: Option<TypedOutputConnection<crate::types::TAudio>>,
-    },
+    0 = OnOffIn[unused_input(1): OnOff][output(1): OnOff]{},
+    1 = OnOffOut[input(1): OnOff][unused_output(1): OnOff]{},
+    2 = NumberIn[unused_input(1): Number][output(1): Number]{},
+    3 = NumberOut[input(1): Number][unused_output(1): Number]{},
+    4 = CompositeIn[unused_input(1): Composite][output(1): Composite]{},
+    5 = CompositeOut[input(1): Composite][unused_output(1): Composite]{},
+    6 = VideoIn[unused_input(1): Video][output(1): Video]{},
+    7 = VideoOut[input(1): Video][unused_output(1): Video]{},
+    8 = AudioIn[unused_input(1): Audio][output(1): Audio]{},
+    9 = AudioOut[input(1): Audio][unused_output(1): Audio]{},
     {
         |_c: &BridgeComponentType, _de: &mut FakeMap<String, RecursiveStringMap>| {}
     }

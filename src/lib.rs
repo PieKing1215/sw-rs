@@ -426,16 +426,12 @@ impl Microcontroller {
         src: &ComponentConnection,
         dst: &ComponentConnection,
     ) -> Result<(), ()> {
-        let o = self.get_component_mut(dst.component_id);
-
-        if let Some(o) = o {
-            if let Some(input) = o.component.inputs_mut().get_mut(dst.node_index as usize) {
-                **input = Some(src.clone());
-                return Ok(());
-            }
+        if let Some(dst) = self.get_connection_mut(dst) {
+            *dst = Some(src.clone());
+            Ok(())
+        } else {
+            Err(())
         }
-
-        Err(())
     }
 }
 

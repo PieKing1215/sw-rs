@@ -384,19 +384,25 @@ impl Microcontroller {
 
     /// Connects two [`ComponentConnection`]s together, if possible.
     ///
-    /// Returns `true` if successful, `false` if not.
+    /// # Errors
+    /// Returns an [`Err`] if the connection could not be made.
     // TODO: better return type
-    pub fn connect(&mut self, src: &ComponentConnection, dst: &ComponentConnection) -> bool {
+    #[allow(clippy::result_unit_err)]
+    pub fn connect(
+        &mut self,
+        src: &ComponentConnection,
+        dst: &ComponentConnection,
+    ) -> Result<(), ()> {
         let o = self.get_component_mut(dst.component_id);
 
         if let Some(o) = o {
             if let Some(input) = o.component.inputs_mut().get_mut(dst.node_index as usize) {
                 **input = Some(src.clone());
-                return true;
+                return Ok(());
             }
         }
 
-        false
+        Err(())
     }
 }
 

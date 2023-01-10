@@ -158,12 +158,18 @@ impl<T: CompileType, const S: bool> core::fmt::Debug for TypedInputConnection<T,
     }
 }
 
+impl<T: CompileType, const S: bool> From<ComponentConnection> for TypedInputConnection<T, S> {
+    fn from(c: ComponentConnection) -> Self {
+        Self::new(c)
+    }
+}
+
 impl<T: CompileType, const S: bool> TypedInputConnection<T, S> {
     /// Creates a [`TypedInputConnection`] with the given connection.
     #[must_use]
-    pub fn new(component_id: u32, node_index: u8) -> Self {
+    pub fn new(conn: ComponentConnection) -> Self {
         Self {
-            connection: Some(ComponentConnection { component_id, node_index }),
+            connection: Some(conn),
             force_visible: false,
             v_attr: None,
             v: None,

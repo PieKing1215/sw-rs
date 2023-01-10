@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sw_mc::{
-    components::{ComponentType, TypedInputConnection},
+    components::{ComponentConnection, ComponentType, TypedInputConnection},
     Microcontroller,
 };
 
@@ -12,7 +12,10 @@ fn main() {
 
     let p: W = W {
         c: ComponentType::CompositeReadOnOff {
-            composite: TypedInputConnection::new(2, 0),
+            composite: TypedInputConnection::new(ComponentConnection {
+                component_id: 2,
+                node_index: 0,
+            }),
             variable_channel: TypedInputConnection::empty(),
             channel: 0,
             out: Default::default(),

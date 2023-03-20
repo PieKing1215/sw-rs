@@ -1,8 +1,13 @@
 # sw-rs
 A WIP library for working with Stormworks data
 
-The main feature is full two-way (de)serialization of microcontroller XML files.<br>
+Currently, the main feature is full two-way (de)serialization of microcontroller XML files.<br>
 You can also use `sw_rs::util::find_microcontroller_folder()` to locate the microcontroller data folder.
+
+### WIP
+- Vehicle XML ser/de
+- Component definition parsing (`rom/data/definitions/`)
+- Mesh parsing (`rom/meshes/`)
 
 ### Example
 ```rust

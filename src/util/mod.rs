@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use super::components::{BridgeComponent, Component, ComponentConnection};
+use crate::microcontroller::components::{BridgeComponent, Component, ComponentConnection};
 
 use self::serde_utils::PositionXY;
 

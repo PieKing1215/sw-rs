@@ -8,7 +8,6 @@
 pub mod components;
 pub mod mc_serde;
 pub mod types;
-pub mod util;
 
 use std::collections::HashSet;
 
@@ -20,7 +19,7 @@ use mc_serde::microcontroller::{IONodeType, MicrocontrollerSerDe};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use types::Type;
-use util::{serde_utils::PositionXY, AnyComponentMut, AnyComponentRef};
+use crate::util::{serde_utils::PositionXY, AnyComponentMut, AnyComponentRef};
 
 /// High level representation of a microcontroller.
 ///

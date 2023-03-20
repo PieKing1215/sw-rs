@@ -3,7 +3,7 @@ use serde::Serialize;
 use sw_rs::microcontroller::Microcontroller;
 
 fn main() {
-    let st = std::fs::read_to_string("samples/mc_blank.xml").unwrap();
+    let st = std::fs::read_to_string("samples/microcontroller/mc_blank.xml").unwrap();
     let mc: Microcontroller = quick_xml::de::from_str(&st).unwrap();
     let mut se = quick_xml::se::Serializer::new(String::new());
     se.indent('\t', 1);

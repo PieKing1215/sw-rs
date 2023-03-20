@@ -9,7 +9,7 @@ You can also use `sw_rs::util::find_microcontroller_folder()` to locate the micr
 use sw_rs::microcontroller::Microcontroller;
 
 pub fn main() {
-    let fname = "samples/blank.xml";
+    let fname = "samples/microcontroller/blank.xml";
 
     // read file
     let src: String = std::fs::read_to_string(fname).unwrap();

@@ -5,9 +5,9 @@ use std::num::ParseFloatError;
 use std::str::FromStr;
 
 use super::types::CompileType;
-use super::util::fakemap_hack::FakeMapExt;
-use super::util::serde_utils::PositionXY;
-use super::util::serde_utils::RecursiveStringMap;
+use crate::util::fakemap_hack::FakeMapExt;
+use crate::util::serde_utils::PositionXY;
+use crate::util::serde_utils::RecursiveStringMap;
 use fakemap::FakeMap;
 use paste::paste;
 use serde::{Deserialize, Serialize};

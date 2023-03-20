@@ -9,8 +9,8 @@ use serde_repr::{Deserialize_repr, Serialize_repr};
 use crate::microcontroller::{
     components::{BridgeComponent, Component},
     types::Type,
-    util::serde_utils::{PositionXZ, RecursiveStringMap},
 };
+use crate::util::serde_utils::{PositionXZ, RecursiveStringMap};
 
 use super::is_default;
 

@@ -369,8 +369,8 @@ impl Microcontroller {
 
     /// Find a [`Component`] by its id.
     #[allow(clippy::must_use_candidate)]
-    pub fn get_connection_mut<'a>(
-        &'a mut self,
+    pub fn get_connection_mut(
+        &mut self,
         src: &ComponentConnection,
     ) -> Option<&mut Option<ComponentConnection>> {
         let c = self

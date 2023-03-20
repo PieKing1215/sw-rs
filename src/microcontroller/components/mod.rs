@@ -955,7 +955,7 @@ components! { ComponentType,
 
                     for i in 1..=32 {
                         if i > *count {
-                            let l = format!("in{}", i);
+                            let l = format!("in{i}");
                             o.remove(&l);
                         }
                     }

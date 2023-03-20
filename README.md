@@ -1,12 +1,12 @@
-# sw-mc
-A WIP library for working with Stormworks microcontrollers
+# sw-rs
+A WIP library for working with Stormworks data
 
 The main feature is full two-way (de)serialization of microcontroller XML files.<br>
-You can also use `sw_mc::util::find_microcontroller_folder()` to locate the microcontroller data folder.
+You can also use `sw_rs::util::find_microcontroller_folder()` to locate the microcontroller data folder.
 
 ### Example
 ```rust
-use sw_mc::Microcontroller;
+use sw_rs::microcontroller::Microcontroller;
 
 pub fn main() {
     let fname = "samples/blank.xml";

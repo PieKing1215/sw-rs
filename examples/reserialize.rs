@@ -1,6 +1,6 @@
 use pretty_assertions::assert_str_eq;
 use serde::Serialize;
-use sw_mc::microcontroller::Microcontroller;
+use sw_rs::microcontroller::Microcontroller;
 
 fn main() {
     let st = std::fs::read_to_string("samples/mc_blank.xml").unwrap();

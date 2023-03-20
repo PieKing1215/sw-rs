@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sw_mc::microcontroller::{
+use sw_rs::microcontroller::{
     components::{ComponentConnection, ComponentType, TypedInputConnection},
     Microcontroller,
 };
@@ -54,8 +54,8 @@ fn main() {
     // struct R {
     //     #[serde(
     //         rename = "c",
-    //         deserialize_with = "sw_mc::components::component_deserialize",
-    //         serialize_with = "sw_mc::components::component_serialize"
+    //         deserialize_with = "sw_rs::components::component_deserialize",
+    //         serialize_with = "sw_rs::components::component_serialize"
     //     )]
     //     c: Component,
     // }

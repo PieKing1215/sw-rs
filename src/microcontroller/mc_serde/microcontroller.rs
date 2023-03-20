@@ -6,7 +6,7 @@ use fakemap::FakeMap;
 use serde::{Deserialize, Serialize};
 use serde_repr::{Deserialize_repr, Serialize_repr};
 
-use crate::{
+use crate::microcontroller::{
     components::{BridgeComponent, Component},
     types::Type,
     util::serde_utils::{PositionXZ, RecursiveStringMap},
@@ -152,8 +152,8 @@ pub(crate) struct Components {
     #[serde(
         rename = "c",
         default,
-        deserialize_with = "crate::components::components_deserialize",
-        serialize_with = "crate::components::components_serialize"
+        deserialize_with = "crate::microcontroller::components::components_deserialize",
+        serialize_with = "crate::microcontroller::components::components_serialize"
     )]
     pub components: Vec<Component>,
 }
@@ -164,8 +164,8 @@ pub(crate) struct ComponentsBridge {
     #[serde(
         rename = "c",
         default,
-        deserialize_with = "crate::components::bridge_components_deserialize",
-        serialize_with = "crate::components::bridge_components_serialize"
+        deserialize_with = "crate::microcontroller::components::bridge_components_deserialize",
+        serialize_with = "crate::microcontroller::components::bridge_components_serialize"
     )]
     pub components_bridge: Vec<BridgeComponent>,
 }

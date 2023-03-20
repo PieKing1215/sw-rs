@@ -3,7 +3,7 @@
 use fakemap::FakeMap;
 use serde::{Deserialize, Serialize};
 
-use crate::{components::de_from_str, mc_serde::is_default};
+use crate::microcontroller::{components::de_from_str, mc_serde::is_default};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(untagged)]

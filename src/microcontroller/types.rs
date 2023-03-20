@@ -32,7 +32,7 @@ pub enum Type {
 ///
 /// Used in ser/de code to do different things depending on IO Type.
 ///
-/// See also [`TypedInputConnection`][crate::components::TypedInputConnection]
+/// See also [`TypedInputConnection`][super::components::TypedInputConnection]
 pub trait CompileType {
     /// Gets the underlying [`Type`].
     fn get_type() -> Type;

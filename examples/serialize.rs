@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use sw_mc::{
+use sw_mc::microcontroller::{
     components::{ComponentConnection, ComponentType, TypedInputConnection},
     Microcontroller,
 };

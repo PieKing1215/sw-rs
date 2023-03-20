@@ -1,6 +1,6 @@
 //! Module containing ser/de code for microcontrollers
 
-use crate::{IONode, IONodeDesign, Microcontroller};
+use super::{IONode, IONodeDesign, Microcontroller};
 
 use self::microcontroller::{
     ComponentsBridgeInnerObject, Group, IONodeInner, IONodeSerDe, MicrocontrollerSerDe,

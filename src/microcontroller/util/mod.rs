@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use crate::components::{BridgeComponent, Component, ComponentConnection};
+use super::components::{BridgeComponent, Component, ComponentConnection};
 
 use self::serde_utils::PositionXY;
 

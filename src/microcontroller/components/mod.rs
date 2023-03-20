@@ -4,15 +4,15 @@ use std::marker::PhantomData;
 use std::num::ParseFloatError;
 use std::str::FromStr;
 
-use crate::types::CompileType;
-use crate::util::fakemap_hack::FakeMapExt;
-use crate::util::serde_utils::PositionXY;
-use crate::util::serde_utils::RecursiveStringMap;
+use super::types::CompileType;
+use super::util::fakemap_hack::FakeMapExt;
+use super::util::serde_utils::PositionXY;
+use super::util::serde_utils::RecursiveStringMap;
 use fakemap::FakeMap;
 use paste::paste;
 use serde::{Deserialize, Serialize};
 
-use crate::{mc_serde::is_default, types::Type};
+use super::{mc_serde::is_default, types::Type};
 
 /// List of IO types for a component.
 pub struct ComponentIODef {
@@ -459,11 +459,11 @@ macro_rules! components {
                     $x {
                         $(
                             #[serde(rename = "" [<in $idx_i>] "", default, skip_serializing_if = "skip_typedinputconnection")]
-                            $in_id: TypedInputConnection<crate::types::[<T $in>], true>,
+                            $in_id: TypedInputConnection<super::types::[<T $in>], true>,
                         )*
                         $(
                             #[serde(rename = "" [<out $idx_o>] "", default, skip_serializing_if = "skip_typedoutputconnection")]
-                            $out_id: TypedOutputConnection<crate::types::[<T $out>]>,
+                            $out_id: TypedOutputConnection<super::types::[<T $out>]>,
                         )*
                         $($b)*
                     },

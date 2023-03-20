@@ -1,4 +1,4 @@
-use sw_mc::Microcontroller;
+use sw_mc::microcontroller::Microcontroller;
 
 pub fn main() {
     let fname = "samples/blank.xml";

@@ -11,6 +11,7 @@ pub mod types;
 
 use std::collections::HashSet;
 
+use crate::util::{serde_utils::PositionXY, AnyComponentMut, AnyComponentRef};
 use components::{
     BridgeComponent, BridgeComponentType, Component, ComponentConnection, ComponentType,
     TypedInputConnection, TypedOutputConnection,
@@ -19,7 +20,6 @@ use mc_serde::microcontroller::{IONodeType, MicrocontrollerSerDe};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use types::Type;
-use crate::util::{serde_utils::PositionXY, AnyComponentMut, AnyComponentRef};
 
 /// High level representation of a microcontroller.
 ///

@@ -86,3 +86,160 @@ impl From<PositionXY> for RecursiveStringMap {
         RecursiveStringMap::Map(m)
     }
 }
+
+/// A 2D i32 position that (de)serializes to/from "x", "y", and "z".
+#[derive(Serialize, Deserialize, Default, PartialEq, Clone, Debug)]
+#[serde(rename = "node")]
+pub struct Vector3I {
+    /// X position.
+    #[serde(
+        rename = "@x",
+        default,
+        skip_serializing_if = "is_default",
+        deserialize_with = "de_from_str"
+    )]
+    pub x: i32,
+    /// Y position.
+    #[serde(
+        rename = "@y",
+        default,
+        skip_serializing_if = "is_default",
+        deserialize_with = "de_from_str"
+    )]
+    pub y: i32,
+    /// Z position.
+    #[serde(
+        rename = "@z",
+        default,
+        skip_serializing_if = "is_default",
+        deserialize_with = "de_from_str"
+    )]
+    pub z: i32,
+}
+
+/// A 2D f32 position that (de)serializes to/from "x", "y", and "z".
+#[derive(Serialize, Deserialize, Default, PartialEq, Clone, Debug)]
+#[serde(rename = "node")]
+pub struct Vector3F {
+    /// X position.
+    #[serde(
+        rename = "@x",
+        default,
+        skip_serializing_if = "is_default",
+        deserialize_with = "de_from_str"
+    )]
+    pub x: f32,
+    /// Y position.
+    #[serde(
+        rename = "@y",
+        default,
+        skip_serializing_if = "is_default",
+        deserialize_with = "de_from_str"
+    )]
+    pub y: f32,
+    /// Z position.
+    #[serde(
+        rename = "@z",
+        default,
+        skip_serializing_if = "is_default",
+        deserialize_with = "de_from_str"
+    )]
+    pub z: f32,
+}
+
+/// A 2D f32 position that (de)serializes to/from "x", "y", and "z".
+#[derive(Serialize, Deserialize, Default, PartialEq, Clone, Debug)]
+#[serde(rename = "node")]
+pub struct Vector3FPadded {
+    /// X position.
+    #[serde(
+        rename = "@x",
+        default,
+        skip_serializing_if = "is_default",
+        deserialize_with = "de_from_str",
+        serialize_with = "ser_f32"
+    )]
+    pub x: f32,
+    /// Y position.
+    #[serde(
+        rename = "@y",
+        default,
+        skip_serializing_if = "is_default",
+        deserialize_with = "de_from_str",
+        serialize_with = "ser_f32"
+    )]
+    pub y: f32,
+    /// Z position.
+    #[serde(
+        rename = "@z",
+        default,
+        skip_serializing_if = "is_default",
+        deserialize_with = "de_from_str",
+        serialize_with = "ser_f32"
+    )]
+    pub z: f32,
+}
+
+/// A 2D i32 position that (de)serializes to/from "x", "y", and "z".
+#[derive(Serialize, Deserialize, Default, PartialEq, Clone, Debug)]
+#[serde(rename = "node")]
+pub struct Vector3INoDefault {
+    /// X position.
+    #[serde(rename = "@x", deserialize_with = "de_from_str")]
+    pub x: i32,
+    /// Y position.
+    #[serde(rename = "@y", deserialize_with = "de_from_str")]
+    pub y: i32,
+    /// Z position.
+    #[serde(rename = "@z", deserialize_with = "de_from_str")]
+    pub z: i32,
+}
+
+/// A 2D f32 position that (de)serializes to/from "x", "y", and "z".
+#[derive(Serialize, Deserialize, Default, PartialEq, Clone, Debug)]
+#[serde(rename = "node")]
+pub struct Vector3FNoDefault {
+    /// X position.
+    #[serde(rename = "@x", deserialize_with = "de_from_str")]
+    pub x: f32,
+    /// Y position.
+    #[serde(rename = "@y", deserialize_with = "de_from_str")]
+    pub y: f32,
+    /// Z position.
+    #[serde(rename = "@z", deserialize_with = "de_from_str")]
+    pub z: f32,
+}
+
+/// A 2D f32 position that (de)serializes to/from "x", "y", and "z".
+#[derive(Serialize, Deserialize, Default, PartialEq, Clone, Debug)]
+#[serde(rename = "node")]
+pub struct Vector3FPaddedNoDefault {
+    /// X position.
+    #[serde(
+        rename = "@x",
+        deserialize_with = "de_from_str",
+        serialize_with = "ser_f32"
+    )]
+    pub x: f32,
+    /// Y position.
+    #[serde(
+        rename = "@y",
+        deserialize_with = "de_from_str",
+        serialize_with = "ser_f32"
+    )]
+    pub y: f32,
+    /// Z position.
+    #[serde(
+        rename = "@z",
+        deserialize_with = "de_from_str",
+        serialize_with = "ser_f32"
+    )]
+    pub z: f32,
+}
+
+fn ser_f32<S>(n: &f32, ser: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    format!("{n:.6}").serialize(ser)
+}

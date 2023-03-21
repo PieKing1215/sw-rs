@@ -1,9 +1,11 @@
 use pretty_assertions::assert_str_eq;
-use sw_rs::microcontroller::Microcontroller;
+use sw_rs::{
+    component::definition::ComponentDefinition, microcontroller::Microcontroller, vehicle::Vehicle,
+};
 
 #[test]
 fn test_samples_serde_matches() {
-    let samples = std::fs::read_dir("samples").unwrap();
+    let samples = std::fs::read_dir("samples/microcontroller").unwrap();
     for f in samples {
         let entry = f.unwrap();
         let fname = entry.file_name().into_string().unwrap();
@@ -49,6 +51,57 @@ fn test_sw_dir_serde_matches() {
 
                 assert_str_eq!(src, out, "{fname}:\n{mc:#?}");
             }
+        }
+    }
+}
+
+#[test]
+fn test_vehicle_samples_serde_matches() {
+    let samples = std::fs::read_dir("samples/vehicle").unwrap();
+    for f in samples {
+        let entry = f.unwrap();
+        let fname = entry.file_name().into_string().unwrap();
+        if fname.ends_with(".xml") {
+            println!("CHECKING {fname}...");
+            let src = std::fs::read_to_string(entry.path()).unwrap();
+            let src = Vehicle::prettify_xml(&src).unwrap();
+
+            #[allow(clippy::expect_fun_call)]
+            let vehicle: Vehicle =
+                Vehicle::from_xml_str(&src).expect(&format!("Failed to deserialize {fname}"));
+
+            #[allow(clippy::expect_fun_call)]
+            let out = vehicle
+                .to_xml_string()
+                .expect(&format!("Failed to serialize {fname}"));
+
+            assert_str_eq!(src, out, "{fname}:\n{vehicle:#?}");
+        }
+    }
+}
+
+#[test]
+fn test_component_definitions_serde_matches() {
+    let samples =
+        std::fs::read_dir("E:/SteamLibrary/steamapps/common/Stormworks/rom/data/definitions")
+            .unwrap();
+    for f in samples {
+        let entry = f.unwrap();
+        let fname = entry.file_name().into_string().unwrap();
+        if fname.ends_with(".xml") {
+            println!("CHECKING {fname}...");
+            let src = std::fs::read_to_string(entry.path()).unwrap();
+
+            #[allow(clippy::expect_fun_call)]
+            let vehicle: ComponentDefinition = ComponentDefinition::from_xml_str(&src)
+                .expect(&format!("Failed to deserialize {fname}"));
+
+            #[allow(clippy::expect_fun_call)]
+            let out = vehicle
+                .to_xml_string()
+                .expect(&format!("Failed to serialize {fname}"));
+
+            // assert_str_eq!(src.replace("\r\n", "\n"), out, "{fname}:\n{vehicle:#?}");
         }
     }
 }

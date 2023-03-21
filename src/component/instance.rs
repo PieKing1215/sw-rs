@@ -90,7 +90,7 @@ pub struct Object {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(transparent)]
-pub struct Color(u32);
+pub struct Color(pub u32);
 
 impl Default for Color {
     fn default() -> Self {

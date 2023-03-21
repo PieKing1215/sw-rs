@@ -15,6 +15,7 @@ fakemap = { git = "https://github.com/PieKing1215/fakemap_dup" }
 dirs = "4.0"
 thiserror = "1.0"
 bitflags = { version = "2", features = ["serde"] }
+byteorder = "1"
 
 [dev-dependencies]
 pretty_assertions = "1.3"

@@ -76,10 +76,10 @@ pub struct Object {
     pub base_color: Color,
 
     #[serde(rename = "@bc2", default, skip_serializing_if = "is_default")]
-    pub base_color_2: Color,
+    pub base_color_2: Option<Color>,
 
     #[serde(rename = "@bc3", default, skip_serializing_if = "is_default")]
-    pub base_color_3: Color,
+    pub base_color_3: Option<Color>,
 
     #[serde(rename = "@ac", default, skip_serializing_if = "is_default")]
     pub additive_color: Color,

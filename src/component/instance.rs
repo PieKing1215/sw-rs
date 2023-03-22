@@ -1,7 +1,9 @@
+use std::num::ParseIntError;
+
 use crate::microcontroller::mc_serde::is_default;
 use serde::{Deserialize, Serialize};
 
-use crate::util::serde_utils::{RecursiveStringMap, Vector3I};
+use crate::util::serde_utils::Vector3I;
 
 fn default_definition() -> String {
     "01_block".into()
@@ -89,12 +91,34 @@ pub struct Object {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-#[serde(transparent)]
-pub struct Color(pub u32);
+#[serde(try_from = "String", into = "String")]
+pub struct Color {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+}
+
+impl From<Color> for String {
+    fn from(val: Color) -> Self {
+        format!("{:x}{:x}{:x}", val.r, val.g, val.b)
+    }
+}
+
+impl TryFrom<String> for Color {
+    type Error = ParseIntError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        u32::from_str_radix(&value, 16).map(|v| Color {
+            r: ((v >> 16) & 0xff) as u8,
+            g: ((v >> 8) & 0xff) as u8,
+            b: (v & 0xff) as u8,
+        })
+    }
+}
 
 impl Default for Color {
     fn default() -> Self {
-        Self(0xFFFFFFFF)
+        Self { r: 0xff, g: 0xff, b: 0xff }
     }
 }
 

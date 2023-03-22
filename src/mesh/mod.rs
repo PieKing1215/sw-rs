@@ -1,13 +1,12 @@
 use std::{
-    fmt::Display,
     fs::File,
-    io::{BufReader, Cursor, Read},
+    io::{BufReader, Read},
 };
 
 use byteorder::{LittleEndian, ReadBytesExt};
 use thiserror::Error;
 
-use crate::{component::instance::Color, util::serde_utils::Vector3F};
+use crate::util::serde_utils::Vector3F;
 
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
@@ -66,7 +65,12 @@ impl Mesh {
                         y: br.read_f32::<LittleEndian>()?,
                         z: br.read_f32::<LittleEndian>()?,
                     },
-                    color: Color(br.read_u32::<LittleEndian>()?),
+                    color: Color {
+                        r: br.read_u8()?,
+                        g: br.read_u8()?,
+                        b: br.read_u8()?,
+                        a: br.read_u8()?,
+                    },
                     normal: Vector3F {
                         x: br.read_f32::<LittleEndian>()?,
                         y: br.read_f32::<LittleEndian>()?,
@@ -169,6 +173,14 @@ pub struct Vertex {
     pub position: Vector3F,
     pub color: Color,
     pub normal: Vector3F,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Color {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub a: u8,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

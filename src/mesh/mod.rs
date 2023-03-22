@@ -196,7 +196,7 @@ pub struct Submesh {
     pub tris: Vec<Face>,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Material {
     Normal,
     Glass,

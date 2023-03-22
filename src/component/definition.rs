@@ -332,7 +332,7 @@ pub struct ComponentDefinition {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Surfaces {
     #[serde(rename = "surface", default)]
-    surfaces: Vec<Surface>,
+    pub surfaces: Vec<Surface>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -352,7 +352,7 @@ pub struct Surface {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct LogicNodes {
     #[serde(rename = "logic_node", default)]
-    nodes: Vec<LogicNode>,
+    pub nodes: Vec<LogicNode>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -376,7 +376,7 @@ pub struct LogicNode {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Voxels {
     #[serde(rename = "voxel", default)]
-    voxels: Vec<Voxel>,
+    pub voxels: Vec<Voxel>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

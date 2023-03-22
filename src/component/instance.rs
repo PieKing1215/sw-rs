@@ -30,7 +30,7 @@ pub struct ComponentInstance {
     )]
     pub flip: Flip,
     #[serde(rename = "o")]
-    object: Object,
+    pub object: Object,
     // pub rotation_matrix: [i8; 9],
     // pub position: PositionIntXYZ,
 }

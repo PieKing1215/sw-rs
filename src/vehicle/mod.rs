@@ -9,21 +9,21 @@ pub mod body;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename = "vehicle")]
-pub struct Vehicle {
+pub struct Vehicle<C: Default + PartialEq = ()> {
     #[serde(rename = "@data_version")]
     pub data_version: u32,
     #[serde(rename = "@bodies_id")]
     pub bodies_id: u32,
     pub authors: (),
-    pub bodies: Bodies,
+    pub bodies: Bodies<C>,
     pub logic_node_links: (),
 }
 
 #[derive(Serialize, Deserialize, Default, Clone, Debug)]
 #[serde(rename = "bodies")]
-pub struct Bodies {
+pub struct Bodies<C: Default + PartialEq = ()> {
     #[serde(rename = "body", default)]
-    pub nodes: Vec<Body>,
+    pub nodes: Vec<Body<C>>,
 }
 
 #[allow(missing_docs)]

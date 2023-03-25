@@ -14,7 +14,7 @@ fn is_default_definition(v: &String) -> bool {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct ComponentInstance {
+pub struct ComponentInstance<C: Default + PartialEq = ()> {
     #[serde(
         rename = "@d",
         default = "default_definition",
@@ -31,6 +31,12 @@ pub struct ComponentInstance {
     pub flip: Flip,
     #[serde(rename = "o")]
     pub object: Object,
+
+    #[serde(
+        default,
+        skip_serializing_if = "is_default",
+    )]
+    pub custom_data: C,
     // pub rotation_matrix: [i8; 9],
     // pub position: PositionIntXYZ,
 }

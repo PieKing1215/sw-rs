@@ -66,7 +66,7 @@ fn test_vehicle_samples_serde_matches() {
         if fname.ends_with(".xml") {
             println!("CHECKING {fname}...");
             let src = std::fs::read_to_string(entry.path()).unwrap();
-            let src = Vehicle::prettify_xml(&src).unwrap();
+            let src = Vehicle::<()>::prettify_xml(&src).unwrap();
 
             #[allow(clippy::expect_fun_call)]
             let vehicle: Vehicle =

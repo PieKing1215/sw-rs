@@ -32,13 +32,21 @@ pub struct ComponentInstance<C: Default + PartialEq = ()> {
     #[serde(rename = "o")]
     pub object: Object,
 
-    #[serde(
-        default,
-        skip_serializing_if = "is_default",
-    )]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub custom_data: C,
     // pub rotation_matrix: [i8; 9],
     // pub position: PositionIntXYZ,
+}
+
+impl<C: Default + PartialEq> ComponentInstance<C> {
+    pub fn clone_as_vanilla(&self) -> ComponentInstance<()> {
+        ComponentInstance {
+            definition: self.definition.clone(),
+            flip: self.flip,
+            object: self.object.clone(),
+            custom_data: (),
+        }
+    }
 }
 
 bitflags::bitflags! {

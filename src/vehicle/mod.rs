@@ -26,6 +26,14 @@ pub struct Bodies<C: Default + PartialEq = ()> {
     pub nodes: Vec<Body<C>>,
 }
 
+impl<C: Default + PartialEq> Bodies<C> {
+    pub fn clone_as_vanilla(&self) -> Bodies<()> {
+        Bodies {
+            nodes: self.nodes.iter().map(|n| n.clone_as_vanilla()).collect(),
+        }
+    }
+}
+
 #[allow(missing_docs)]
 #[derive(Error, Debug)]
 pub enum VehicleSerDeError {
@@ -33,7 +41,7 @@ pub enum VehicleSerDeError {
     SerDeError(#[from] quick_xml::DeError),
 }
 
-impl Vehicle {
+impl<'a, C: Default + PartialEq + Serialize + Deserialize<'a>> Vehicle<C> {
     /// # Errors
     /// Returns an [`Err(VehicleSerDeError)`] if the serialization failed, or if the microcontroller was invalid.
     pub fn to_xml_string(&self) -> Result<String, VehicleSerDeError> {
@@ -46,7 +54,7 @@ impl Vehicle {
 
     /// # Errors
     /// Returns an [`Err(VehicleSerDeError)`] if the deserialization failed, or if the microcontroller was invalid.
-    pub fn from_xml_str(xml: &str) -> Result<Self, VehicleSerDeError> {
+    pub fn from_xml_str(xml: &'a str) -> Result<Self, VehicleSerDeError> {
         let mc: Self = quick_xml::de::from_str(xml)?;
         Ok(mc)
     }
@@ -73,5 +81,15 @@ impl Vehicle {
                     .replace("\n\t", "\n")
             )
         })
+    }
+
+    pub fn clone_as_vanilla(&self) -> Vehicle<()> {
+        Vehicle {
+            data_version: self.data_version,
+            bodies_id: self.bodies_id,
+            authors: self.authors,
+            bodies: self.bodies.clone_as_vanilla(),
+            logic_node_links: self.logic_node_links,
+        }
     }
 }

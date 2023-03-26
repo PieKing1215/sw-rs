@@ -12,14 +12,23 @@ use crate::{
 pub struct ComponentDefinition {
     #[serde(rename = "@name")]
     pub name: String,
-    #[serde(rename = "@category")]
-    pub category: Option<u32>, // TODO: figure this out
+
+    /// Component's category in the component selector
+    #[serde(rename = "@category", default, skip_serializing_if = "is_default")]
+    pub category: Category,
+
+    /// Component's type. Unknown usage
     #[serde(rename = "@type")]
-    pub typ: u32, // TODO: figure this out
+    pub typ: Type,
+
+    /// Mass of the component
     #[serde(rename = "@mass")]
     pub mass: f32,
+
+    /// Price of the component
     #[serde(rename = "@value")]
-    pub value: u32, // TODO: figure this out
+    pub value: u32,
+
     #[serde(
         rename = "@flags",
         default,
@@ -27,9 +36,17 @@ pub struct ComponentDefinition {
         serialize_with = "ser_flags",
         deserialize_with = "de_flags"
     )]
-    pub flags: Flags, // TODO: figure this out
-    #[serde(rename = "@tags")]
-    pub tags: Option<String>, // TODO: make this Vec<String> (comma separated)
+    pub flags: Flags,
+
+    /// List of the component's tags, as shown in the component selector
+    #[serde(
+        rename = "@tags",
+        default,
+        skip_serializing_if = "is_default",
+        serialize_with = "ser_tags",
+        deserialize_with = "de_tags"
+    )]
+    pub tags: Vec<String>,
 
     #[serde(rename = "@phys_collision_dampen")]
     pub phys_collision_dampen: Option<u32>,
@@ -260,15 +277,15 @@ pub struct ComponentDefinition {
     #[serde(rename = "@radar_speed")]
     pub radar_speed: Option<f32>,
     #[serde(rename = "@engine_module_type")]
-    pub engine_module_type: Option<u32>,
+    pub engine_module_type: Option<u32>, // TODO: figure this out
     #[serde(rename = "@steam_component_type")]
-    pub steam_component_type: Option<u32>,
+    pub steam_component_type: Option<u32>, // TODO: figure this out
     #[serde(rename = "@steam_component_capacity")]
     pub steam_component_capacity: Option<f32>,
     #[serde(rename = "@nuclear_component_type")]
-    pub nuclear_component_type: Option<u32>,
+    pub nuclear_component_type: Option<u32>, // TODO: figure this out
     #[serde(rename = "@radar_type")]
-    pub radar_type: Option<u32>,
+    pub radar_type: Option<u32>, // TODO: figure this out
 
     #[serde(rename = "@piston_len")]
     pub piston_len: Option<f32>,
@@ -276,10 +293,10 @@ pub struct ComponentDefinition {
     pub piston_cam: Option<f32>,
 
     #[serde(rename = "@tool_type")]
-    pub tool_type: Option<u32>,
+    pub tool_type: Option<u32>, // TODO: figure this out
 
     #[serde(rename = "@oil_component_type")]
-    pub oil_component_type: Option<u32>,
+    pub oil_component_type: Option<u32>, // TODO: figure this out
 
     pub surfaces: Surfaces,
     pub buoyancy_surfaces: Surfaces,
@@ -336,6 +353,20 @@ pub struct ComponentDefinition {
     pub weapon_cart_position: Option<Vector3F>,
     pub weapon_cart_velocity: Option<Vector3F>,
     pub rope_hook_offset: Option<Vector3F>,
+}
+
+fn ser_tags<S>(tags: &Vec<String>, ser: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    tags.join(",").serialize(ser)
+}
+
+fn de_tags<'de, D>(de: D) -> Result<Vec<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    String::deserialize(de).map(|t| t.split(",").map(|s| s.to_string()).collect())
 }
 
 bitflags::bitflags! {
@@ -423,6 +454,281 @@ where
     D: serde::Deserializer<'de>,
 {
     u32::deserialize(de).map(|n| Flags::from_bits(n).unwrap())
+}
+
+#[derive(
+    Serialize, Deserialize, Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash,
+)]
+#[serde(from = "u8", into = "u8")]
+pub enum Category {
+    #[default]
+    Blocks,
+    VehicleControl,
+    Mechanics,
+    Propulsion,
+    SpecialistEquipment,
+    Logic,
+    Displays,
+    Sensors,
+    Decorative,
+    Fluid,
+    Electric,
+    JetEngines,
+    Weapons,
+    ModularEngines,
+    Industry,
+    Windows,
+    _Other(u8),
+}
+
+impl From<u8> for Category {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => Self::Blocks,
+            1 => Self::VehicleControl,
+            2 => Self::Mechanics,
+            3 => Self::Propulsion,
+            4 => Self::SpecialistEquipment,
+            5 => Self::Logic,
+            6 => Self::Displays,
+            7 => Self::Sensors,
+            8 => Self::Decorative,
+            9 => Self::Fluid,
+            10 => Self::Electric,
+            11 => Self::JetEngines,
+            12 => Self::Weapons,
+            13 => Self::ModularEngines,
+            14 => Self::Industry,
+            15 => Self::Windows,
+            _ => Self::_Other(value),
+        }
+    }
+}
+
+impl From<Category> for u8 {
+    fn from(value: Category) -> Self {
+        match value {
+            Category::Blocks => 0,
+            Category::VehicleControl => 1,
+            Category::Mechanics => 2,
+            Category::Propulsion => 3,
+            Category::SpecialistEquipment => 4,
+            Category::Logic => 5,
+            Category::Displays => 6,
+            Category::Sensors => 7,
+            Category::Decorative => 8,
+            Category::Fluid => 9,
+            Category::Electric => 10,
+            Category::JetEngines => 11,
+            Category::Weapons => 12,
+            Category::ModularEngines => 13,
+            Category::Industry => 14,
+            Category::Windows => 15,
+            Category::_Other(value) => value,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[serde(from = "u8", into = "u8")]
+pub enum Type {
+    BlockWedge,
+    Seat,
+    PropellerRotorFan,
+    Float,
+    WheelCoaster,
+    StockEngine,
+    Pipe,
+    Motion,
+    SimpleInput,
+    DecorativeAndLinearTrackExtension,
+    SmallLight,
+    LargeLight,
+    _Unused12,
+    SlidingDoorElectric,
+    Gyro,
+    _Unused15,
+    SensorAndLogic,
+    Connector,
+    Aerodynamic,
+    Ladder,
+    OldWinch,
+    Output,
+    Handle,
+    _Unused23,
+    Fluid,
+    ElectricPump,
+    _Unused26,
+    MagAll,
+    Paintable,
+    HingedDock,
+    DoorFramePanel,
+    BasicElectronic,
+    EquipmentInventory,
+    GearboxAndTorque,
+    JetPart,
+    Parachute,
+    TrainWheelAssembly,
+    _Unused37,
+    AdvancedOutput,
+    Heater,
+    Ski,
+    Wheel,
+    Camera,
+    Monitor,
+    Weapon,
+    Radio,
+    KeepActive,
+    Rocket,
+    AnchorAndWinch,
+    FlareLauncher,
+    HingedDoor,
+    SlidingDoor,
+    ModularEngine,
+    Steam,
+    Nuclear,
+    FrictionPad,
+    Radar,
+    Sonar,
+    EndEffectorAndWelder,
+    OilRig,
+    _Other(u8),
+}
+
+impl From<u8> for Type {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => Self::BlockWedge,
+            1 => Self::Seat,
+            2 => Self::PropellerRotorFan,
+            3 => Self::Float,
+            4 => Self::WheelCoaster,
+            5 => Self::StockEngine,
+            6 => Self::Pipe,
+            7 => Self::Motion,
+            8 => Self::SimpleInput,
+            9 => Self::DecorativeAndLinearTrackExtension,
+            10 => Self::SmallLight,
+            11 => Self::LargeLight,
+            12 => Self::_Unused12,
+            13 => Self::SlidingDoorElectric,
+            14 => Self::Gyro,
+            15 => Self::_Unused15,
+            16 => Self::SensorAndLogic,
+            17 => Self::Connector,
+            18 => Self::Aerodynamic,
+            19 => Self::Ladder,
+            20 => Self::OldWinch,
+            21 => Self::Output,
+            22 => Self::Handle,
+            23 => Self::_Unused23,
+            24 => Self::Fluid,
+            25 => Self::ElectricPump,
+            26 => Self::_Unused26,
+            27 => Self::MagAll,
+            28 => Self::Paintable,
+            29 => Self::HingedDock,
+            30 => Self::DoorFramePanel,
+            31 => Self::BasicElectronic,
+            32 => Self::EquipmentInventory,
+            33 => Self::GearboxAndTorque,
+            34 => Self::JetPart,
+            35 => Self::Parachute,
+            36 => Self::TrainWheelAssembly,
+            37 => Self::_Unused37,
+            38 => Self::AdvancedOutput,
+            39 => Self::Heater,
+            40 => Self::Ski,
+            41 => Self::Wheel,
+            42 => Self::Camera,
+            43 => Self::Monitor,
+            44 => Self::Weapon,
+            45 => Self::Radio,
+            46 => Self::KeepActive,
+            47 => Self::Rocket,
+            48 => Self::AnchorAndWinch,
+            49 => Self::FlareLauncher,
+            50 => Self::HingedDoor,
+            51 => Self::SlidingDoor,
+            52 => Self::ModularEngine,
+            53 => Self::Steam,
+            54 => Self::Nuclear,
+            55 => Self::FrictionPad,
+            56 => Self::Radar,
+            57 => Self::Sonar,
+            58 => Self::EndEffectorAndWelder,
+            59 => Self::OilRig,
+            v => Self::_Other(v),
+        }
+    }
+}
+
+impl From<Type> for u8 {
+    fn from(value: Type) -> Self {
+        match value {
+            Type::BlockWedge => 0,
+            Type::Seat => 1,
+            Type::PropellerRotorFan => 2,
+            Type::Float => 3,
+            Type::WheelCoaster => 4,
+            Type::StockEngine => 5,
+            Type::Pipe => 6,
+            Type::Motion => 7,
+            Type::SimpleInput => 8,
+            Type::DecorativeAndLinearTrackExtension => 9,
+            Type::SmallLight => 10,
+            Type::LargeLight => 11,
+            Type::_Unused12 => 12,
+            Type::SlidingDoorElectric => 13,
+            Type::Gyro => 14,
+            Type::_Unused15 => 15,
+            Type::SensorAndLogic => 16,
+            Type::Connector => 17,
+            Type::Aerodynamic => 18,
+            Type::Ladder => 19,
+            Type::OldWinch => 20,
+            Type::Output => 21,
+            Type::Handle => 22,
+            Type::_Unused23 => 23,
+            Type::Fluid => 24,
+            Type::ElectricPump => 25,
+            Type::_Unused26 => 26,
+            Type::MagAll => 27,
+            Type::Paintable => 28,
+            Type::HingedDock => 29,
+            Type::DoorFramePanel => 30,
+            Type::BasicElectronic => 31,
+            Type::EquipmentInventory => 32,
+            Type::GearboxAndTorque => 33,
+            Type::JetPart => 34,
+            Type::Parachute => 35,
+            Type::TrainWheelAssembly => 36,
+            Type::_Unused37 => 37,
+            Type::AdvancedOutput => 38,
+            Type::Heater => 39,
+            Type::Ski => 40,
+            Type::Wheel => 41,
+            Type::Camera => 42,
+            Type::Monitor => 43,
+            Type::Weapon => 44,
+            Type::Radio => 45,
+            Type::KeepActive => 46,
+            Type::Rocket => 47,
+            Type::AnchorAndWinch => 48,
+            Type::FlareLauncher => 49,
+            Type::HingedDoor => 50,
+            Type::SlidingDoor => 51,
+            Type::ModularEngine => 52,
+            Type::Steam => 53,
+            Type::Nuclear => 54,
+            Type::FrictionPad => 55,
+            Type::Radar => 56,
+            Type::Sonar => 57,
+            Type::EndEffectorAndWelder => 58,
+            Type::OilRig => 59,
+            Type::_Other(v) => v,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

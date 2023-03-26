@@ -355,6 +355,7 @@ pub struct ComponentDefinition {
     pub rope_hook_offset: Option<Vector3F>,
 }
 
+#[allow(clippy::ptr_arg)] // required due to serde
 fn ser_tags<S>(tags: &Vec<String>, ser: S) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
@@ -366,7 +367,7 @@ fn de_tags<'de, D>(de: D) -> Result<Vec<String>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
-    String::deserialize(de).map(|t| t.split(",").map(|s| s.to_string()).collect())
+    String::deserialize(de).map(|t| t.split(',').map(|s| s.to_string()).collect())
 }
 
 bitflags::bitflags! {

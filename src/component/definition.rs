@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::util::serde_utils::{RecursiveStringMap, Vector3F, Vector3I};
+use crate::{
+    microcontroller::mc_serde::is_default,
+    util::serde_utils::{RecursiveStringMap, Vector3F, Vector3I},
+};
 
 /// Note: Deserializing and re-serializing is not guaranteed to result in the exact same result, since the built-in definitions' formatting is wildly inconsistent
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -17,8 +20,14 @@ pub struct ComponentDefinition {
     pub mass: f32,
     #[serde(rename = "@value")]
     pub value: u32, // TODO: figure this out
-    #[serde(rename = "@flags")]
-    pub flags: Option<u32>, // TODO: figure this out
+    #[serde(
+        rename = "@flags",
+        default,
+        skip_serializing_if = "is_default",
+        serialize_with = "ser_flags",
+        deserialize_with = "de_flags"
+    )]
+    pub flags: Flags, // TODO: figure this out
     #[serde(rename = "@tags")]
     pub tags: Option<String>, // TODO: make this Vec<String> (comma separated)
 
@@ -327,6 +336,93 @@ pub struct ComponentDefinition {
     pub weapon_cart_position: Option<Vector3F>,
     pub weapon_cart_velocity: Option<Vector3F>,
     pub rope_hook_offset: Option<Vector3F>,
+}
+
+bitflags::bitflags! {
+    #[derive(Serialize, Deserialize, Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    #[serde(transparent)]
+    pub struct Flags: u32 {
+        /// Unknown purpose; some wedges and a bunch of random other parts
+        const _Unknown1         = 0b0000_0000_0000_0001;
+        /// All underwater propeller parts
+        const WaterPropeller    = 0b0000_0000_0000_0010;
+        /// Unknown purpose; only `Aircraft Propeller` and `Rotor (Tail)`
+        const _Unknown4         = 0b0000_0000_0000_0100;
+        /// Unknown purpose; blocks+wedges and some random other parts
+        const _Unknown8         = 0b0000_0000_0000_1000;
+        /// Unknown purpose; blocks+wedges and some random other parts
+        const _Unknown16        = 0b0000_0000_0001_0000;
+        /// Unknown purpose; blocks+wedges and some random other parts
+        const _Unknown32        = 0b0000_0000_0010_0000;
+        /// Components that have a child part
+        const Parent            = 0b0000_0000_0100_0000;
+        /// Components that have a parent part
+        ///
+        /// These are hidden in the vanilla build menu
+        const Child             = 0b0000_0000_1000_0000;
+        /// Unknown purpose; some random moving pieces
+        const _Unknown256       = 0b0000_0001_0000_0000;
+        /// Unknown purpose; some random moving piece bases
+        const _Unknown512       = 0b0000_0010_0000_0000;
+        /// Unknown purpose; all pilot/driver seats and winch ends
+        const _Unknown1024      = 0b0000_0100_0000_0000;
+        /// Unknown purpose; only `Static Block`, `Train Junction Controller`, and `Hose (Deprecated)`
+        const _Unknown2048      = 0b0000_1000_0000_0000;
+        /// Unknown purpose; only `Linear Track Base`
+        const _Unknown4096      = 0b0001_0000_0000_0000;
+        /// Unknown purpose
+        const _Unknown8192      = 0b0010_0000_0000_0000;
+        /// Unknown purpose
+        const _Unknown16384     = 0b0100_0000_0000_0000;
+        /// All wing parts
+        const Wing              = 0b1000_0000_0000_0000;
+        /// Non-wheel suspension parts
+        const Suspension        = 0b0000_0000_0000_0001_0000_0000_0000_0000;
+        /// Unused
+        const _Unknown131072    = 0b0000_0000_0000_0010_0000_0000_0000_0000;
+        /// Unknown purpose; only `Turbine Engine`
+        const _Unknown262144    = 0b0000_0000_0000_0100_0000_0000_0000_0000;
+        /// Unknown purpose; water props, ducted fans, winches, and some anchors
+        const _Unknown524288    = 0b0000_0000_0000_1000_0000_0000_0000_0000;
+        /// Unknown purpose; electric, fluid, hardpoint, and sliding connectors
+        const _Unknown1048576   = 0b0000_0000_0001_0000_0000_0000_0000_0000;
+        /// Unknown purpose; only `Jet Exhaust Rotating`
+        const _Unknown2097152   = 0b0000_0000_0010_0000_0000_0000_0000_0000;
+        /// Unknown purpose; only `Paintable Sign`
+        const _Unknown4194304   = 0b0000_0000_0100_0000_0000_0000_0000_0000;
+        /// All of the 3x3, 5x5, etc. wheels and tank wheels
+        const ModernWheel       = 0b0000_0000_1000_0000_0000_0000_0000_0000;
+        /// The old deprecated radio recievers and `Radio Video Recv`
+        const OldRadioRX        = 0b0000_0001_0000_0000_0000_0000_0000_0000;
+        /// The old deprecated radio transmitters and `Radio Video Xmit`
+        const OldRadioTX        = 0b0000_0010_0000_0000_0000_0000_0000_0000;
+        /// Radio Video Xmit/Recv
+        const RadioVideo        = 0b0000_0100_0000_0000_0000_0000_0000_0000;
+        /// Unknown purpose; some cameras and lights
+        const _Unknown134217728 = 0b0000_1000_0000_0000_0000_0000_0000_0000;
+        /// The new radio recievers (`Radio RX ___`)
+        const NewRadioRX        = 0b0001_0000_0000_0000_0000_0000_0000_0000;
+        /// Parts that are hidden in the vanilla build menu
+        const Hidden            = 0b0010_0000_0000_0000_0000_0000_0000_0000;
+        /// Non-deprecated rotors, not including `Rotor (Tail)`
+        const ModernRotor       = 0b0100_0000_0000_0000_0000_0000_0000_0000;
+        /// Unknown purpose; only `Oil Rig Pumpjack`
+        const _Unknown2147483648= 0b1000_0000_0000_0000_0000_0000_0000_0000;
+    }
+}
+
+fn ser_flags<S>(flags: &Flags, ser: S) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    flags.bits().serialize(ser)
+}
+
+fn de_flags<'de, D>(de: D) -> Result<Flags, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    u32::deserialize(de).map(|n| Flags::from_bits(n).unwrap())
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

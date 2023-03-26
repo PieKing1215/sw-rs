@@ -73,7 +73,7 @@ fn test_vehicle_samples_serde_matches() {
                 Vehicle::from_xml_str(&src).expect(&format!("Failed to deserialize {fname}"));
 
             #[allow(clippy::expect_fun_call)]
-            let out = vehicle
+            let _out = vehicle
                 .to_xml_string()
                 .expect(&format!("Failed to serialize {fname}"));
 
